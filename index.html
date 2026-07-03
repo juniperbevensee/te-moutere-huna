@@ -1212,7 +1212,8 @@ $('stage').addEventListener('pointerdown', e=>{
   else if(game.mode === 'stars') starTap();
   else if(game.mode === 'reunite'){
     const tk = game.taonga;
-    if(Math.hypot(e.clientX-tk.x, e.clientY-tk.y) < 75) tk.drag = true;
+    const grab = e.pointerType==='touch' ? 95 : 75;
+    if(Math.hypot(e.clientX-tk.x, e.clientY-tk.y) < grab) tk.drag = true;
   }
 });
 addEventListener('pointermove', e=>{
@@ -1226,6 +1227,10 @@ addEventListener('pointerup', ()=>{
     game.taonga.drag = false;
     reuniteCheck(true);
   }
+});
+addEventListener('pointercancel', ()=>{
+  /* browser stole the gesture (edge swipe, notification) — drop cleanly, no release check */
+  if(game.mode==='reunite') game.taonga.drag = false;
 });
 addEventListener('keydown', e=>{
   if(game.mode==='hack') return;                    /* let Tab/Enter/Space operate the tiles natively */
