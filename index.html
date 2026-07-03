@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Te Moutere Huna — The Hidden Island</title>
+<style>
+  :root{
+    --night0:#02040a; --night1:#0a1626; --night2:#122238;
+    --star:#e9f2f7; --mist:#8fa8bd;
+    --pounamu:#3fd0a8; --ember:#ffb45e; --rose:#ff8aa6;
+    --danger:#ff5348; --violet:#9d8cff;
+    --panel:rgba(4,8,16,.78);
+    --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+    --mono:"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--night0);overflow:hidden;height:100%}
+  #stage{position:fixed;inset:0;background:var(--night0);font-family:var(--serif);color:var(--star);
+    -webkit-user-select:none;user-select:none;cursor:pointer;touch-action:none}
+  #cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #vignette{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 42%, transparent 55%, rgba(0,2,6,.55) 100%)}
+  #grain{position:absolute;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:overlay}
+
+  /* ---------- dialogue ---------- */
+  #dlg{position:absolute;left:50%;bottom:4.5vh;transform:translateX(-50%);
+    width:min(720px,92vw);background:var(--panel);border:1px solid rgba(233,242,247,.13);
+    border-left:3px solid var(--mist);padding:20px 26px 24px;border-radius:2px;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    box-shadow:0 18px 50px rgba(0,0,0,.5);display:none}
+  #plate{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mist);
+    margin-bottom:10px;font-family:var(--serif)}
+  #txt{font-size:clamp(16px,2.1vh,19px);line-height:1.65;min-height:3.3em;color:var(--star)}
+  #txt.nar{font-style:italic;color:#c9d8e4}
+  #txt.mono{font-family:var(--mono);font-size:clamp(12px,1.7vh,14px);letter-spacing:.12em;
+    color:var(--danger);font-style:normal;line-height:1.9}
+  #txt.being{color:#cfe9ff;letter-spacing:.03em;font-style:italic;
+    text-shadow:0 0 14px rgba(157,140,255,.55)}
+  #adv{position:absolute;right:16px;bottom:10px;font-size:13px;color:var(--mist);
+    animation:pulse 1.6s ease-in-out infinite;opacity:0}
+  #adv.on{opacity:1}
+  @keyframes pulse{0%,100%{opacity:.25}50%{opacity:.9}}
+
+  /* ---------- choices ---------- */
+  #choices{position:absolute;left:50%;bottom:26vh;transform:translateX(-50%);
+    width:min(620px,92vw);display:none;flex-direction:column;gap:14px}
+  .choice{background:var(--panel);border:1px solid rgba(233,242,247,.2);color:var(--star);
+    font-family:var(--serif);text-align:left;padding:16px 22px;border-radius:2px;cursor:pointer;
+    font-size:clamp(15px,2vh,18px);line-height:1.45;transition:border-color .25s,box-shadow .25s,transform .25s;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .choice em{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    font-style:normal;color:var(--mist);margin-top:7px}
+  .choice:hover,.choice:focus-visible{border-color:var(--pounamu);transform:translateY(-2px);
+    box-shadow:0 8px 30px rgba(63,208,168,.15);outline:none}
+
+  /* ---------- title / endcards ---------- */
+  .card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;text-align:center;gap:0;padding:6vh 6vw;z-index:5}
+  .card .kicker{font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--mist);margin-bottom:3.2vh}
+  .card h1{font-size:clamp(34px,7.5vw,74px);font-weight:400;letter-spacing:.16em;line-height:1.14;
+    text-wrap:balance;text-shadow:0 0 40px rgba(63,208,168,.25)}
+  .card .sub{font-size:clamp(15px,2.4vh,20px);font-style:italic;color:#b9cbd9;margin-top:2.2vh;
+    max-width:34em;line-height:1.7;text-wrap:balance}
+  .card .dedic{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--pounamu);margin-top:4vh}
+  .btn{margin-top:5vh;background:transparent;border:1px solid var(--pounamu);color:var(--pounamu);
+    font-family:var(--serif);font-size:15px;letter-spacing:.28em;text-transform:uppercase;
+    padding:15px 44px;cursor:pointer;transition:all .3s;border-radius:1px}
+  .btn:hover,.btn:focus-visible{background:rgba(63,208,168,.12);box-shadow:0 0 34px rgba(63,208,168,.3);outline:none}
+  .card.grief h1{text-shadow:none;color:#aebcc8;letter-spacing:.1em}
+  .card.grief .btn{border-color:var(--mist);color:var(--mist)}
+  .card.grief .btn:hover{background:rgba(143,168,189,.1);box-shadow:0 0 30px rgba(143,168,189,.2)}
+  #title,#endA,#endB{display:none}
+
+  /* ---------- keypad ---------- */
+  #keypad{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);display:none;
+    flex-direction:column;align-items:center;gap:14px;background:rgba(2,5,10,.9);
+    border:1px solid rgba(255,83,72,.35);padding:26px 30px 30px;border-radius:3px;z-index:6;
+    box-shadow:0 0 60px rgba(255,83,72,.12), inset 0 0 30px rgba(0,0,0,.6)}
+  #kp-label{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--danger)}
+  #kp-display{font-family:var(--mono);font-size:26px;letter-spacing:.55em;color:var(--star);
+    background:#050a12;border:1px solid rgba(233,242,247,.15);padding:10px 8px 10px 20px;
+    width:200px;text-align:center;min-height:50px;border-radius:2px}
+  #kp-display.err{color:var(--danger);animation:shake .35s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+  #kp-grid{display:grid;grid-template-columns:repeat(3,64px);gap:9px}
+  .kp{font-family:var(--mono);font-size:19px;color:var(--star);background:rgba(18,34,56,.7);
+    border:1px solid rgba(233,242,247,.14);padding:14px 0;cursor:pointer;border-radius:2px;transition:all .15s}
+  .kp:hover{border-color:var(--danger);background:rgba(255,83,72,.12)}
+  #kp-hint{font-style:italic;color:var(--mist);font-size:13px;max-width:250px;text-align:center;
+    line-height:1.5;min-height:2.6em}
+
+  /* ---------- star game ---------- */
+  #starui{position:absolute;left:50%;top:6vh;transform:translateX(-50%);display:none;
+    flex-direction:column;align-items:center;gap:10px;z-index:6;pointer-events:none;text-align:center}
+  #star-inst{font-style:italic;color:#c9d8e4;font-size:clamp(14px,2vh,17px);background:var(--panel);
+    padding:10px 22px;border-radius:2px;border:1px solid rgba(233,242,247,.12)}
+  #star-pips{font-size:20px;letter-spacing:.5em;color:var(--pounamu)}
+  #star-fb{font-style:italic;color:var(--ember);font-size:14px;min-height:1.4em}
+
+  #dragui{position:absolute;left:50%;top:6vh;transform:translateX(-50%);display:none;z-index:6;
+    pointer-events:none;font-style:italic;color:#c9d8e4;font-size:clamp(14px,2vh,17px);
+    background:var(--panel);padding:10px 22px;border-radius:2px;
+    border:1px solid rgba(233,242,247,.12);text-align:center;max-width:88vw}
+  #dragui b{color:var(--pounamu);font-weight:600}
+
+  #mute{position:absolute;top:18px;right:18px;z-index:9;background:rgba(4,8,16,.6);
+    border:1px solid rgba(233,242,247,.18);color:var(--mist);width:42px;height:42px;border-radius:50%;
+    cursor:pointer;font-size:16px;font-family:var(--serif);transition:color .2s}
+  #mute:hover{color:var(--star)}
+  #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:8}
+
+  @media (prefers-reduced-motion: reduce){ #adv{animation:none;opacity:.7} }
+</style>
+
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="vignette"></div>
+  <div id="flash"></div>
+
+  <div id="title" class="card">
+    <div class="kicker">he kōrero mō tētahi hoa pūmau · a story for a dear friend</div>
+    <h1>TE&nbsp;MOUTERE<br>HUNA</h1>
+    <div class="sub">The Hidden Island</div>
+    <div class="dedic">for Pirihira</div>
+    <button class="btn" id="begin">Hoea · Begin</button>
+  </div>
+
+  <div id="endA" class="card grief">
+    <div class="kicker">te moana kua ngaro · lost to the sea</div>
+    <h1>HE WAKA<br>EKE NOA</h1>
+    <div class="sub">A canoe we are all in together, with no exception.<br><br>
+      Some visions are true — and still too heavy to carry alone.
+      The sea keeps what it is given. The fire is still burning on the beach.</div>
+    <button class="btn" id="retryA">Return to the fire</button>
+  </div>
+
+  <div id="endB" class="card">
+    <div class="kicker">mānawatia a Matariki · nine sisters, shining</div>
+    <h1>TE&nbsp;MOUTERE<br>HUNA</h1>
+    <div class="sub">He taonga te moemoeā — a dream is a treasure.<br><br>
+      Believe your friends. Check the tectonics. Sail together.<br>
+      And every winter, greet the nine by name — all nine.</div>
+    <div class="dedic">made with aroha for Pirihira</div>
+    <button class="btn" id="again">Play again</button>
+  </div>
+
+  <div id="dlg">
+    <div id="plate"></div>
+    <div id="txt"></div>
+    <div id="adv">▸</div>
+  </div>
+  <div id="choices"></div>
+
+  <div id="keypad">
+    <div id="kp-label">BLACKWELL · SVC-DOOR 3 · ENTER CODE</div>
+    <div id="kp-display"></div>
+    <div id="kp-grid"></div>
+    <div id="kp-hint">Four digits. The cameras sweep back in ninety seconds.</div>
+  </div>
+
+  <div id="dragui">The taonga is warm in Pirihira's hands. <b>Drag it home — into Waitī's light.</b></div>
+
+  <div id="starui">
+    <div id="star-inst">Hold the course — tap (or press space) when <b>Te Punga</b> drifts into the mark above the mast.</div>
+    <div id="star-pips">✧ ✧ ✧</div>
+    <div id="star-fb"></div>
+  </div>
+
+  <button id="mute" title="sound">♪</button>
+</div>
+
+<script>
+'use strict';
+/* ================================================================
+   TE MOUTERE HUNA — The Hidden Island
+   a small story-game, made with aroha for Pirihira
+   ================================================================ */
+
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TSCALE = REDUCED ? 0.18 : 1;
+
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+addEventListener('resize', resize); resize();
+
+/* ---------- seeded random ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+function makeStars(seed, n){
+  const r = mulberry32(seed), s = [];
+  for(let i=0;i<n;i++) s.push({x:r(), y:r(), r:.4+r()*1.3, tw:.5+r()*2.5, ph:r()*6.28, b:.35+r()*.6});
+  return s;
+}
+const STARS = makeStars(7, 260);
+
+/* ================================================================
+   CANVAS SCENE RENDERERS
+   ================================================================ */
+function skyGrad(top, mid, bot, horizon){
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, top); g.addColorStop(Math.max(.01,horizon-.12), mid); g.addColorStop(horizon, bot);
+  return g;
+}
+function drawStars(t, horizon, alpha=1, tint='233,242,247'){
+  for(const s of STARS){
+    const y = s.y * horizon * H;
+    const a = alpha * s.b * (0.55 + 0.45*Math.sin(t*s.tw + s.ph));
+    if(a <= 0.02) continue;
+    ctx.fillStyle = `rgba(${tint},${a.toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(s.x*W, y, s.r, 0, 6.29); ctx.fill();
+  }
+}
+function drawSea(t, horizon, layers, palette, amp, glow){
+  const hy = horizon*H;
+  for(let i=0;i<layers;i++){
+    const yBase = hy + (H-hy)*(i/layers)*0.9 + 6;
+    const a = amp*(1+i*.55), f = .006 - i*.0007, sp = (.5+i*.22)*t;
+    ctx.beginPath(); ctx.moveTo(0,H);
+    for(let x=0;x<=W;x+=14){
+      ctx.lineTo(x, yBase + Math.sin(x*f + sp + i*2.1)*a + Math.sin(x*f*2.7 - sp*.6)*a*.4);
+    }
+    ctx.lineTo(W,H); ctx.closePath();
+    ctx.fillStyle = palette[Math.min(i,palette.length-1)];
+    ctx.fill();
+    if(glow && i===0){
+      ctx.strokeStyle = glow; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for(let x=0;x<=W;x+=14){
+        const y = yBase + Math.sin(x*f + sp + i*2.1)*a + Math.sin(x*f*2.7 - sp*.6)*a*.4;
+        x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+  }
+}
+function drawMoon(x, y, r, tint='rgba(233,242,247,'){
+  const g = ctx.createRadialGradient(x,y,r*.2, x,y,r*4);
+  g.addColorStop(0, tint+'.9)'); g.addColorStop(.25, tint+'.18)'); g.addColorStop(1, tint+'0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r*4,0,6.29); ctx.fill();
+  ctx.fillStyle = tint+'.95)'; ctx.beginPath(); ctx.arc(x,y,r,0,6.29); ctx.fill();
+}
+/* single-hull silhouette for the doomed solo sail */
+function drawWakaSmall(x, y, s, t){
+  const bob = Math.sin(t*1.1)*3*s;
+  ctx.save(); ctx.translate(x, y+bob); ctx.scale(s,s);
+  ctx.fillStyle = '#01030a';
+  ctx.beginPath();
+  ctx.moveTo(-60,0); ctx.quadraticCurveTo(-70,-16,-64,-26);
+  ctx.quadraticCurveTo(-58,-14,-48,-8);
+  ctx.lineTo(48,-8); ctx.quadraticCurveTo(58,-14,66,-30);
+  ctx.quadraticCurveTo(70,-12,60,0); ctx.quadraticCurveTo(0,10,-60,0);
+  ctx.fill();
+  ctx.beginPath(); ctx.arc(6,-16,6,0,6.29); ctx.fill();           /* paddler */
+  ctx.fillRect(3,-14,6,10);
+  ctx.restore();
+}
+/* waka unua — double hull, platform, crab-claw sail */
+function drawWakaUnua(x, y, s, t, sailTint){
+  const bob = Math.sin(t*.9)*4*s, tilt = Math.sin(t*.55)*.02;
+  ctx.save(); ctx.translate(x, y+bob); ctx.rotate(tilt); ctx.scale(s,s);
+  ctx.fillStyle = '#01030a';
+  for(const hy of [0, 14]){
+    ctx.beginPath();
+    ctx.moveTo(-95,hy); ctx.quadraticCurveTo(-108,hy-20,-100,hy-34);
+    ctx.quadraticCurveTo(-92,hy-16,-78,hy-9);
+    ctx.lineTo(78,hy-9); ctx.quadraticCurveTo(92,hy-16,104,hy-38);
+    ctx.quadraticCurveTo(110,hy-14,96,hy); ctx.quadraticCurveTo(0,hy+9,-95,hy);
+    ctx.fill();
+  }
+  ctx.fillRect(-52,-13,104,7);                                     /* platform */
+  ctx.fillRect(-3,-96,5,86);                                       /* mast */
+  ctx.beginPath();                                                 /* crab-claw sail */
+  ctx.moveTo(2,-94);
+  ctx.quadraticCurveTo(66,-76,58,-14);
+  ctx.quadraticCurveTo(30,-40,2,-16);
+  ctx.closePath();
+  ctx.fillStyle = sailTint || '#050b16'; ctx.fill();
+  ctx.fillStyle = '#01030a';
+  ctx.beginPath(); ctx.arc(-26,-20,5.5,0,6.29); ctx.fill();        /* three figures */
+  ctx.beginPath(); ctx.arc(-8,-19,5.5,0,6.29); ctx.fill();
+  ctx.beginPath(); ctx.arc(24,-21,5.5,0,6.29); ctx.fill();
+  ctx.fillRect(-30,-18,9,10); ctx.fillRect(-12,-17,9,9); ctx.fillRect(20,-19,9,11);
+  ctx.restore();
+}
+/* the island — a mountain like a raised hand */
+function drawIsland(x, y, s, color, t, withBase){
+  ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-260,0);
+  ctx.quadraticCurveTo(-200,-14,-160,-36);
+  ctx.lineTo(-118,-64); ctx.lineTo(-92,-52);                       /* knuckles */
+  ctx.lineTo(-60,-108); ctx.lineTo(-42,-96);                       /* finger */
+  ctx.lineTo(-16,-150); ctx.lineTo(4,-128);                        /* tallest finger */
+  ctx.lineTo(30,-118); ctx.lineTo(48,-88);
+  ctx.lineTo(78,-74); ctx.lineTo(110,-44);
+  ctx.quadraticCurveTo(180,-16,260,0);
+  ctx.closePath(); ctx.fill();
+  if(withBase){
+    /* radomes + aerials on the right headland */
+    ctx.fillStyle = '#dfe8ef';
+    ctx.beginPath(); ctx.arc(120,-46,9,Math.PI,0); ctx.fill();
+    ctx.beginPath(); ctx.arc(146,-38,7,Math.PI,0); ctx.fill();
+    ctx.strokeStyle = '#c9d4dd'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(96,-44); ctx.lineTo(96,-86); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(166,-34); ctx.lineTo(166,-70); ctx.stroke();
+    const blink = (Math.sin(t*2.4)>0.2)?1:0.15;
+    ctx.fillStyle = `rgba(255,83,72,${blink})`;
+    ctx.beginPath(); ctx.arc(96,-88,2.4,0,6.29); ctx.fill();
+    ctx.beginPath(); ctx.arc(166,-72,2.2,0,6.29); ctx.fill();
+  }
+  ctx.restore();
+}
+/* Te Punga — the Southern Cross */
+function drawCrux(cx, cy, s, glow, t){
+  const P = [[0,-1.6],[-1.05,.25],[.15,1.55],[.95,-.35],[.42,.5]];  /* γ β α δ ε */
+  if(glow){
+    ctx.strokeStyle = `rgba(63,208,168,${.14+.08*Math.sin(t*2)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx+P[0][0]*s, cy+P[0][1]*s); ctx.lineTo(cx+P[2][0]*s, cy+P[2][1]*s);
+    ctx.moveTo(cx+P[1][0]*s, cy+P[1][1]*s); ctx.lineTo(cx+P[3][0]*s, cy+P[3][1]*s);
+    ctx.stroke();
+  }
+  P.forEach((p,i)=>{
+    const r = (i===4? 1.6 : 2.6) * (glow?1.25:1);
+    const a = .8 + .2*Math.sin(t*3 + i);
+    if(glow){
+      const g = ctx.createRadialGradient(cx+p[0]*s, cy+p[1]*s, 0, cx+p[0]*s, cy+p[1]*s, r*5);
+      g.addColorStop(0, `rgba(233,242,247,${a})`); g.addColorStop(1,'rgba(233,242,247,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx+p[0]*s, cy+p[1]*s, r*5, 0, 6.29); ctx.fill();
+    }
+    ctx.fillStyle = `rgba(233,242,247,${a})`;
+    ctx.beginPath(); ctx.arc(cx+p[0]*s, cy+p[1]*s, r, 0, 6.29); ctx.fill();
+  });
+}
+/* Matariki — the nine sisters; Waitī (index 4) dark until she is freed */
+const MATARIKI_P = [[0,-2],[-16,-9],[-7,-17],[6,-13],[15,-6],[11,7],[-1,13],[-13,7],[4,1]];
+function drawMatariki(cx, cy, s, t, complete){
+  MATARIKI_P.forEach((p,i)=>{
+    const waiti = i===4;
+    const x = cx+p[0]*s, y = cy+p[1]*s;
+    if(waiti && !complete){
+      ctx.fillStyle = `rgba(233,242,247,${.06+.03*Math.sin(t*1.3)})`;
+      ctx.beginPath(); ctx.arc(x,y,1.1*s,0,6.29); ctx.fill();
+      return;
+    }
+    const a = .5+.35*Math.sin(t*2.1+i*1.7);
+    const r = (i===0?1.9:1.4)*(waiti?1.5:1)*Math.min(s,2);
+    const tint = (waiti && complete) ? '120,235,190' : '233,242,247';
+    const g = ctx.createRadialGradient(x,y,0,x,y,r*4.5);
+    g.addColorStop(0,`rgba(${tint},${a})`); g.addColorStop(1,`rgba(${tint},0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y,r*4.5,0,6.29); ctx.fill();
+    ctx.fillStyle = `rgba(${tint},${Math.min(1,a+.3)})`;
+    ctx.beginPath(); ctx.arc(x,y,r,0,6.29); ctx.fill();
+  });
+}
+/* fire particles */
+const embers = [];
+function fire(t, x, y){
+  if(embers.length < 90 && Math.random()<.6)
+    embers.push({x:x+(Math.random()-.5)*26, y, vy:-(30+Math.random()*55), vx:(Math.random()-.5)*22,
+      life:1, sz:1+Math.random()*2.6});
+  const g = ctx.createRadialGradient(x,y-14,4, x,y-14,170);
+  g.addColorStop(0,'rgba(255,180,94,.5)'); g.addColorStop(.4,'rgba(255,120,50,.14)'); g.addColorStop(1,'rgba(255,120,50,0)');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x,y-14,170,0,6.29); ctx.fill();
+  for(let i=embers.length-1;i>=0;i--){
+    const e = embers[i];
+    e.life -= .012; e.y += e.vy*.016; e.x += e.vx*.016 + Math.sin(t*3+e.y*.05)*.4;
+    if(e.life<=0){ embers.splice(i,1); continue; }
+    ctx.fillStyle = `rgba(255,${140+Math.floor(e.life*90)},60,${e.life*.85})`;
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.sz*e.life,0,6.29); ctx.fill();
+  }
+  /* flames */
+  for(let i=0;i<3;i++){
+    const fl = Math.sin(t*7+i*2.2)*.5+.8;
+    ctx.fillStyle = ['rgba(255,120,40,.8)','rgba(255,170,70,.85)','rgba(255,220,140,.9)'][i];
+    ctx.beginPath();
+    ctx.moveTo(x-16+i*7, y+4);
+    ctx.quadraticCurveTo(x-20+i*8+Math.sin(t*6+i)*5, y-24*fl-i*8, x+(i-1)*4, y-40*fl-i*10);
+    ctx.quadraticCurveTo(x+16-i*5+Math.sin(t*5.5+i*3)*5, y-20*fl-i*6, x+16-i*7, y+4);
+    ctx.fill();
+  }
+}
+function seated(x, y, s, tone){
+  ctx.fillStyle = tone;
+  ctx.beginPath(); ctx.arc(x, y-30*s, 10*s, 0, 6.29); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x-16*s, y); ctx.quadraticCurveTo(x-15*s, y-26*s, x, y-22*s);
+  ctx.quadraticCurveTo(x+15*s, y-26*s, x+16*s, y); ctx.closePath(); ctx.fill();
+}
+/* the being — slow light */
+function drawBeing(cx, cy, R, t, freed){
+  const pulse = 1 + Math.sin(t*.8)*.08 + Math.sin(t*2.3)*.03;
+  const hue = (t*22)%360;
+  for(let i=4;i>=1;i--){
+    const r = R*pulse*(i/2.4);
+    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+    g.addColorStop(0, `hsla(${(hue+i*24)%360},80%,${72-i*6}%,${.5/i})`);
+    g.addColorStop(1, `hsla(${(hue+i*24)%360},80%,60%,0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.29); ctx.fill();
+  }
+  ctx.fillStyle = `hsla(${hue},60%,92%,.95)`;
+  ctx.beginPath(); ctx.arc(cx,cy,R*.16*pulse,0,6.29); ctx.fill();
+  for(let i=0;i<9;i++){                                            /* orbit motes */
+    const a = t*(.4+i*.09)+(i*.7), rr = R*(.55+.3*Math.sin(t*.5+i*1.3))*(freed?1.6:1);
+    const mx = cx+Math.cos(a)*rr, my = cy+Math.sin(a*1.3+i)*rr*.7;
+    ctx.fillStyle = `hsla(${(hue+i*40)%360},85%,80%,.8)`;
+    ctx.beginPath(); ctx.arc(mx,my,1.8,0,6.29); ctx.fill();
+  }
+  if(!freed){                                                      /* containment lattice */
+    ctx.strokeStyle = `rgba(255,83,72,${.32+.12*Math.sin(t*4)})`;
+    ctx.lineWidth = 1;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.ellipse(cx,cy,R*1.55,R*(.5+i*.42),(t*.2+i*1.05)%6.29,0,6.29);
+      ctx.stroke();
+    }
+  }
+}
+function aurora(t, strength){
+  for(let b=0;b<4;b++){
+    const baseY = H*(.16+b*.11);
+    ctx.beginPath();
+    for(let x=0;x<=W;x+=18){
+      const y = baseY + Math.sin(x*.004+t*.35+b*1.8)*46 + Math.sin(x*.011-t*.22+b)*22;
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    const hue = 150 + b*36 + Math.sin(t*.3+b)*18;
+    const g = ctx.createLinearGradient(0,baseY-90,0,baseY+130);
+    g.addColorStop(0,`hsla(${hue},80%,60%,0)`);
+    g.addColorStop(.5,`hsla(${hue},85%,62%,${.13*strength})`);
+    g.addColorStop(1,`hsla(${hue},80%,60%,0)`);
+    ctx.strokeStyle = g; ctx.lineWidth = 90; ctx.stroke();
+  }
+}
+function taongaGlyph(cx, cy, s, t, lit){
+  /* the taonga — a koru, the unfurling fern frond */
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.sin(t*.4)*.05); ctx.scale(s,s);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const col = lit ? `hsla(${(t*30)%360},75%,72%,.95)` : '#2f7a60';
+  ctx.strokeStyle = col;
+  ctx.shadowColor = lit ? 'rgba(63,208,168,.9)' : 'rgba(63,208,168,.3)';
+  ctx.shadowBlur = lit ? 22 : 7;
+  const TURNS = 2.5, N = 80, R0 = 26, K = .12, PHI = Math.PI*.62;
+  const sx = Math.cos(PHI)*R0, sy = Math.sin(PHI)*R0 - 2;      /* spiral entry */
+  ctx.lineWidth = 8;                                            /* stem sweeps up into it */
+  ctx.beginPath(); ctx.moveTo(2,40); ctx.quadraticCurveTo(-16,38,sx,sy); ctx.stroke();
+  let px = sx, py = sy;                                         /* log spiral, tapering */
+  for(let i=1;i<=N;i++){
+    const th = (i/N)*TURNS*2*Math.PI;
+    const r = R0*Math.exp(-K*th);
+    const x = Math.cos(th+PHI)*r, y = Math.sin(th+PHI)*r - 2;
+    ctx.lineWidth = 8*(1-i/N) + 1.4;
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(x,y); ctx.stroke();
+    px = x; py = y;
+  }
+  ctx.restore();
+}
+
+/* ---------- the renderers ---------- */
+let rainDrops = null;
+const R = {
+  oceanNight(t){
+    ctx.fillStyle = skyGrad('#02040a','#0a1626','#13273f',.62); ctx.fillRect(0,0,W,H);
+    drawStars(t,.6); drawMoon(W*.78,H*.18,17);
+    drawSea(t,.62,5,['#0e2036','#0b1a2d','#081525','#05101d','#030b16'],7,'rgba(63,208,168,.28)');
+    drawWakaUnua(W*.38, H*.66, Math.min(W,900)/900*.9, t);
+  },
+  dream(t){
+    ctx.fillStyle = skyGrad('#0b0620','#123','#0e3b3f',.66); ctx.fillRect(0,0,W,H);
+    drawStars(t*.5,.66,.9,'157,140,255');
+    const rise = Math.min(1,(t%40)/9);
+    drawIsland(W*.5, H*.66+ (1-rise)*70, Math.min(W,900)/900*1.1, 'rgba(10,40,44,.92)', t, false);
+    drawSea(t*.6,.66,4,['rgba(20,60,70,.85)','rgba(14,45,58,.9)','rgba(9,32,45,.95)','rgba(5,20,32,1)'],9,'rgba(157,140,255,.3)');
+    const a = .25+.2*Math.sin(t*.7);
+    ctx.font = `500 ${Math.max(15,W*.02)}px ${"'SF Mono',Menlo,Consolas,monospace"}`;
+    ctx.textAlign='center';
+    ctx.fillStyle = `rgba(207,233,255,${a})`;
+    ctx.fillText("38° 42′ S   ·   167° 51′ W", W*.5, H*.2);
+    ctx.textAlign='left';
+  },
+  maps(t){
+    ctx.fillStyle = '#04060c'; ctx.fillRect(0,0,W,H);
+    const pw = Math.min(300, W*.6), ph = pw*1.95, px = W/2-pw/2, py = H*.5-ph/2;
+    const g = ctx.createRadialGradient(W/2,H*.5,10,W/2,H*.5,pw*1.7);
+    g.addColorStop(0,'rgba(48,110,190,.25)'); g.addColorStop(1,'rgba(48,110,190,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#0a0f18'; ctx.strokeStyle='#26313f'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(px,py,pw,ph,26); ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.beginPath(); ctx.roundRect(px+10,py+12,pw-20,ph-24,16); ctx.clip();
+    ctx.fillStyle = '#12406e'; ctx.fillRect(px,py,pw,ph);          /* nothing but blue */
+    ctx.strokeStyle = 'rgba(233,242,247,.09)';
+    for(let i=1;i<6;i++){ ctx.beginPath(); ctx.moveTo(px, py+ph*i/6); ctx.lineTo(px+pw, py+ph*i/6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(px+pw*i/6, py); ctx.lineTo(px+pw*i/6, py+ph); ctx.stroke(); }
+    const pa = .5+.5*Math.sin(t*2.2);
+    ctx.strokeStyle = `rgba(255,255,255,${.25+pa*.4})`; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(px+pw/2, py+ph*.42, 12+pa*8, 0, 6.29); ctx.stroke();
+    ctx.font = `600 12px ${"'SF Mono',Menlo,monospace"}`; ctx.textAlign='center';
+    ctx.fillStyle = 'rgba(233,242,247,.75)';
+    ctx.fillText('38°42′S 167°51′W', px+pw/2, py+ph*.42+38);
+    ctx.fillStyle = 'rgba(233,242,247,.4)';
+    ctx.fillText('no results found', px+pw/2, py+ph*.42+56);
+    ctx.restore(); ctx.textAlign='left';
+  },
+  fire(t){
+    ctx.fillStyle = skyGrad('#03050c','#0a1424','#101f33',.7); ctx.fillRect(0,0,W,H);
+    drawStars(t,.68);
+    drawSea(t,.7,3,['#0a1828','#071220','#040c18'],5,null);
+    ctx.fillStyle = '#0a0d10';                                     /* beach */
+    ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(0,H*.82);
+    ctx.quadraticCurveTo(W*.5,H*.76,W,H*.84); ctx.lineTo(W,H); ctx.fill();
+    const fx = W*.5, fy = H*.84;
+    fire(t, fx, fy);
+    seated(fx-110, fy+8, 1.1, '#04070c');                          /* juni */
+    seated(fx+112, fy+4, 1.0, '#04070c');                          /* maia */
+    seated(fx-6, fy+26, 1.15, '#04070c');                          /* dylan, nearest */
+  },
+  bathy(t){
+    ctx.fillStyle = '#030812'; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle = 'rgba(63,208,168,.07)';
+    for(let x=0;x<W;x+=60){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for(let y=0;y<H;y+=60){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    const cx = W*.5, cy = H*.42;
+    for(let i=9;i>=1;i--){                                         /* seamount contours */
+      const rr = i*Math.min(W,H)*.052;
+      ctx.beginPath();
+      for(let a=0;a<=6.3;a+=.12){
+        const wob = 1 + Math.sin(a*3+i)*0.07 + Math.sin(a*7-i)*0.03;
+        const x = cx+Math.cos(a)*rr*wob*1.25, y = cy+Math.sin(a)*rr*wob*.8;
+        a===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = `rgba(63,208,168,${.5-i*.045})`;
+      ctx.lineWidth = i===1?2:1; ctx.stroke();
+      if(i%3===0){
+        ctx.font = `10px ${"'SF Mono',Menlo,monospace"}`;
+        ctx.fillStyle = 'rgba(143,168,189,.55)';
+        ctx.fillText(`-${i*450}m`, cx+rr*1.18, cy+4);
+      }
+    }
+    /* hotspot chain — footprints marching NW */
+    ctx.fillStyle = 'rgba(63,208,168,.22)';
+    for(let i=1;i<6;i++){
+      ctx.beginPath(); ctx.ellipse(cx - i*W*.09, cy - i*H*.055, 26-i*3, 16-i*2, -.5, 0, 6.29); ctx.fill();
+    }
+    const pa = .5+.5*Math.sin(t*2.6);
+    ctx.strokeStyle = `rgba(255,83,72,${.5+pa*.5})`; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(cx-16,cy); ctx.lineTo(cx+16,cy); ctx.moveTo(cx,cy-16); ctx.lineTo(cx,cy+16); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx,cy,22+pa*7,0,6.29); ctx.stroke();
+    ctx.font = `600 12px ${"'SF Mono',Menlo,monospace"}`; ctx.fillStyle='rgba(255,83,72,.9)';
+    ctx.fillText('38°42′S 167°51′W', cx+30, cy-26);
+    ctx.fillStyle = 'rgba(143,168,189,.8)';
+    ctx.fillText('SEAMOUNT · LAST SURVEY 1987 · UPLIFT SWARM 2024', cx+30, cy-10);
+  },
+  voyageDay(t){
+    ctx.fillStyle = skyGrad('#1a2b47','#8a5a3f','#e0955a',.6); ctx.fillRect(0,0,W,H);
+    drawMoon(W*.24,H*.5,26,'rgba(255,214,150,');                   /* low gold sun */
+    drawSea(t,.6,5,['#8a4f33','#5e3a33','#3d2c38','#262039','#151530'],8,'rgba(255,180,94,.4)');
+    drawWakaUnua(W*.55, H*.68, Math.min(W,900)/900*1.05, t, '#0a0f1c');
+  },
+  voyageNight(t){
+    ctx.fillStyle = skyGrad('#01030a','#071224','#0d1f36',.66); ctx.fillRect(0,0,W,H);
+    drawStars(t,.64);
+    /* Milky Way band */
+    const mg = ctx.createLinearGradient(W*.1,0,W*.9,H*.5);
+    mg.addColorStop(0,'rgba(233,242,247,0)'); mg.addColorStop(.5,'rgba(200,220,240,.06)'); mg.addColorStop(1,'rgba(233,242,247,0)');
+    ctx.fillStyle = mg;
+    ctx.save(); ctx.translate(W/2,H*.3); ctx.rotate(-.4); ctx.fillRect(-W,-70,2*W,140); ctx.restore();
+    if(game.mode!=='stars') drawCrux(W*.72, H*.24, 26, true, t);
+    if(game.scene==='voyageNight2') drawMatariki(W*.15, H*.56, 1.6, t, false);
+    drawSea(t,.66,5,['#0a1a2f','#081527','#05101f','#040b18','#020711'],6,'rgba(63,208,168,.3)');
+    drawWakaUnua(W*.5, H*.72, Math.min(W,900)/900, t);
+    if(game.mode==='stars') starGameDraw(t);
+  },
+  landfall(t){
+    ctx.fillStyle = skyGrad('#11213c','#71486b','#e8975f',.58); ctx.fillRect(0,0,W,H);
+    drawStars(t,.3,.35);
+    drawIsland(W*.55, H*.62, Math.min(W,900)/900*1.25, '#0b1420', t, true);
+    drawSea(t,.6,5,['#503a55','#3a2d4c','#262242','#171838','#0c0e28'],7,'rgba(255,180,94,.3)');
+    drawWakaUnua(W*.22, H*.72, Math.min(W,900)/900*.8, t);
+  },
+  base(t){
+    ctx.fillStyle = '#04060a'; ctx.fillRect(0,0,W,H);
+    drawStars(t,.4,.5);
+    ctx.fillStyle = '#0b0f14';                                     /* concrete wall */
+    ctx.fillRect(0,H*.34,W,H);
+    ctx.strokeStyle = 'rgba(233,242,247,.025)';
+    for(let y=H*.34;y<H;y+=52){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    for(let x=0;x<W;x+=120){ ctx.beginPath(); ctx.moveTo(x,H*.34); ctx.lineTo(x,H); ctx.stroke(); }
+    /* service door */
+    const dx = W*.5-70, dy = H*.44;
+    ctx.fillStyle = '#080b10'; ctx.strokeStyle = '#1c242e'; ctx.lineWidth=3;
+    ctx.fillRect(dx,dy,140,H*.42); ctx.strokeRect(dx,dy,140,H*.42);
+    const ka = game.mode==='keypad' ? .8+.2*Math.sin(t*3) : .35;
+    ctx.fillStyle = `rgba(255,83,72,${ka})`;
+    ctx.fillRect(dx+152, dy+50, 26, 34);
+    /* camera */
+    ctx.save(); ctx.translate(W*.82, H*.37); ctx.rotate(Math.sin(t*.5)*.3);
+    ctx.fillStyle = '#10161e'; ctx.fillRect(-4,-6,30,14);
+    ctx.fillStyle = `rgba(255,83,72,${(Math.sin(t*3)>0)?.9:.2})`;
+    ctx.beginPath(); ctx.arc(24,1,2,0,6.29); ctx.fill();
+    ctx.restore();
+    /* floodlight pool sweeping the wall, off to the left */
+    const lx = W*.18 + Math.sin(t*.3)*W*.08;
+    const fg = ctx.createRadialGradient(lx,H*.34,10, lx,H*.34,H*.4);
+    fg.addColorStop(0,'rgba(207,225,240,.08)'); fg.addColorStop(1,'rgba(207,225,240,0)');
+    ctx.fillStyle = fg;
+    ctx.beginPath(); ctx.arc(lx,H*.34,H*.4,0,6.29); ctx.fill();
+  },
+  cell(t, alarm){
+    ctx.fillStyle = '#030509'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = '#07090e'; ctx.fillRect(0,H*.72,W,H);          /* floor */
+    ctx.strokeStyle = 'rgba(207,233,255,.05)';
+    for(let i=0;i<8;i++){                                          /* perspective lines */
+      ctx.beginPath(); ctx.moveTo(W*.5+(i-3.5)*90, H*.72); ctx.lineTo(W*.5+(i-3.5)*260, H); ctx.stroke();
+    }
+    drawBeing(W*.5, H*.42, Math.min(W,H)*.16, t, game.freed);
+    if(!game.freed){
+      /* the taonga's case, off to the right */
+      const cx = W*.82, cy = H*.6;
+      ctx.strokeStyle = 'rgba(207,233,255,.25)'; ctx.lineWidth=1.5;
+      ctx.strokeRect(cx-46,cy-52,92,96);
+      ctx.fillStyle = 'rgba(207,233,255,.03)'; ctx.fillRect(cx-46,cy-52,92,96);
+      if(game.mode==='reunite' || game.mode==='transition'){
+        /* carried — glowing warmer the closer it gets to the being */
+        const tk = game.taonga;
+        taongaGlyph(tk.x, tk.y, 1.15, t, true);
+      } else {
+        taongaGlyph(cx, cy-4, 1.0, t, false);
+        ctx.font = `9px ${"'SF Mono',Menlo,monospace"}`; ctx.fillStyle='rgba(255,83,72,.7)';
+        ctx.textAlign='center';
+        ctx.fillText('SPECIMEN BW-01 · INERT', cx, cy+62); ctx.textAlign='left';
+      }
+    }
+    if(alarm){
+      const ra = .12+.1*Math.sin(t*6);
+      ctx.fillStyle = `rgba(255,40,30,${ra})`; ctx.fillRect(0,0,W,H);
+    }
+  },
+  alarm(t){ R.cell(t, true); },
+  radiance(t){
+    ctx.fillStyle = skyGrad('#01030a','#071224','#0d1f36',.7); ctx.fillRect(0,0,W,H);
+    drawStars(t,.68); aurora(t, 1);
+    drawBeing(W*.5, H*.36, Math.min(W,H)*.2, t, true);
+    taongaGlyph(W*.5, H*.36, 1.3, t, true);
+    drawSea(t,.7,4,['#0a1a2f','#071527','#04101f','#020a16'],5,'rgba(157,140,255,.35)');
+  },
+  stormDawn(t){
+    ctx.fillStyle = skyGrad('#20242c','#3a3f47','#565b60',.55); ctx.fillRect(0,0,W,H);
+    drawSea(t*1.6,.55,5,['#3d434b','#31363e','#252a32','#1a1e26','#10141b'],16,'rgba(233,242,247,.25)');
+    drawWakaSmall(W*.45, H*.62, Math.min(W,900)/900, t*1.6);
+    if(!rainDrops){ rainDrops = []; const r = mulberry32(3);
+      for(let i=0;i<130;i++) rainDrops.push({x:r(), y:r(), s:.6+r()}); }
+    ctx.strokeStyle = 'rgba(200,215,228,.28)'; ctx.lineWidth=1;
+    for(const d of rainDrops){
+      const yy = ((d.y + t*d.s*.5) % 1) * H, xx = d.x*W - t*40*d.s % W;
+      ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx-7*d.s, yy+16*d.s); ctx.stroke();
+    }
+    if((t%6)<.14 || ((t+2.3)%9)<.1){ ctx.fillStyle='rgba(240,246,252,.24)'; ctx.fillRect(0,0,W,H); }
+  },
+  lost(t){
+    ctx.fillStyle = skyGrad('#272c33','#3d434b','#4f545b',.52); ctx.fillRect(0,0,W,H);
+    drawSea(t*.5,.52,5,['#3a4048','#2f343c','#242931','#191d25','#0f131a'],6,null);
+    /* one paddle, drifting */
+    ctx.save(); ctx.translate(W*.5+Math.sin(t*.4)*20, H*.66+Math.sin(t*.8)*5); ctx.rotate(.28+Math.sin(t*.3)*.05);
+    ctx.fillStyle = '#0b0e12'; ctx.fillRect(-46,-3,74,6);
+    ctx.beginPath(); ctx.ellipse(40,0,17,8,0,0,6.29); ctx.fill();
+    ctx.restore();
+  },
+  epilogue(t){
+    ctx.fillStyle = skyGrad('#01030a','#071224','#0d1f36',.64); ctx.fillRect(0,0,W,H);
+    drawStars(t,.62); aurora(t,.7);
+    drawCrux(W*.7, H*.2, 24, true, t);
+    drawMatariki(W*.2, H*.5, 1.9, t, true);
+    drawSea(t,.64,5,['#0c1d33','#091829','#061222','#040c1a','#020712'],6,'rgba(63,208,168,.4)');
+    drawWakaUnua(W*.44, H*.7, Math.min(W,900)/900*.95, t);
+  },
+};
+
+/* ================================================================
+   AUDIO — procedural sea, drone, chimes
+   ================================================================ */
+const AU = { ctx:null, master:null, noiseGain:null, filter:null, droneGain:null,
+             muted:false, profile:'calm', nextChime:0, alarmOsc:null, alarmGain:null };
+function auInit(){
+  if(AU.ctx) return;
+  try{
+    const A = new (window.AudioContext||window.webkitAudioContext)();
+    AU.ctx = A;
+    AU.master = A.createGain(); AU.master.gain.value = AU.muted?0:.9; AU.master.connect(A.destination);
+    const buf = A.createBuffer(1, A.sampleRate*2, A.sampleRate);
+    const d = buf.getChannelData(0);
+    let last = 0;
+    for(let i=0;i<d.length;i++){ const w = Math.random()*2-1; last = (last + .02*w)/1.02; d[i] = last*3.2; }
+    const src = A.createBufferSource(); src.buffer = buf; src.loop = true;
+    AU.filter = A.createBiquadFilter(); AU.filter.type='lowpass'; AU.filter.frequency.value=420;
+    AU.noiseGain = A.createGain(); AU.noiseGain.gain.value = .12;
+    src.connect(AU.filter); AU.filter.connect(AU.noiseGain); AU.noiseGain.connect(AU.master);
+    src.start();
+    const o1 = A.createOscillator(), o2 = A.createOscillator();
+    o1.frequency.value = 55; o2.frequency.value = 55.6; o1.type = o2.type = 'sine';
+    AU.droneGain = A.createGain(); AU.droneGain.gain.value = .035;
+    o1.connect(AU.droneGain); o2.connect(AU.droneGain); AU.droneGain.connect(AU.master);
+    o1.start(); o2.start();
+    AU.alarmGain = A.createGain(); AU.alarmGain.gain.value = 0; AU.alarmGain.connect(AU.master);
+    AU.alarmOsc = A.createOscillator(); AU.alarmOsc.type='triangle'; AU.alarmOsc.frequency.value=196;
+    AU.alarmOsc.connect(AU.alarmGain); AU.alarmOsc.start();
+  }catch(e){ /* no audio — the story still sails */ }
+}
+function auScene(p){
+  AU.profile = p;
+  if(!AU.ctx) return;
+  const T = AU.ctx.currentTime, ramp = 2.2;
+  const set = (param, v)=>{ param.cancelScheduledValues(T); param.setTargetAtTime(v, T, ramp); };
+  const cfg = {
+    calm:   {n:.12, f:420,  d:.035, a:0},
+    dream:  {n:.05, f:240,  d:.05,  a:0},
+    quiet:  {n:.04, f:300,  d:.03,  a:0},
+    storm:  {n:.3,  f:900,  d:.05,  a:0},
+    tense:  {n:.05, f:260,  d:.045, a:0},
+    alarm:  {n:.06, f:300,  d:.04,  a:.05},
+    wonder: {n:.07, f:380,  d:.045, a:0},
+  }[p] || {n:.1, f:400, d:.035, a:0};
+  set(AU.noiseGain.gain, cfg.n); set(AU.filter.frequency, cfg.f);
+  set(AU.droneGain.gain, cfg.d); set(AU.alarmGain.gain, cfg.a);
+}
+const SCALE = [293.66, 349.23, 392.00, 440.00, 523.25, 587.33];
+function auChime(now){
+  if(!AU.ctx || AU.profile!=='wonder') return;
+  if(now < AU.nextChime) return;
+  AU.nextChime = now + 1.4 + Math.random()*2.6;
+  const A = AU.ctx, T = A.currentTime;
+  const o = A.createOscillator(), g = A.createGain();
+  o.type = 'triangle';
+  o.frequency.value = SCALE[Math.floor(Math.random()*SCALE.length)] * (Math.random()<.4?.5:1);
+  g.gain.setValueAtTime(0, T);
+  g.gain.linearRampToValueAtTime(.09, T+.06);
+  g.gain.exponentialRampToValueAtTime(.0001, T+3.2);
+  o.connect(g); g.connect(AU.master); o.start(T); o.stop(T+3.4);
+}
+$('mute').addEventListener('pointerdown', e=>e.stopPropagation());
+$('mute').addEventListener('click', e=>{
+  e.stopPropagation();
+  AU.muted = !AU.muted;
+  $('mute').textContent = AU.muted ? '𝄽' : '♪';
+  if(AU.master) AU.master.gain.setTargetAtTime(AU.muted?0:.9, AU.ctx.currentTime, .1);
+});
+
+/* ================================================================
+   THE STORY
+   ================================================================ */
+const SPEAKERS = {
+  nar:   {name:'',            color:'var(--mist)',    cls:'nar'},
+  dylan: {name:'PIRIHIRA',       color:'var(--pounamu)', cls:''},
+  juni:  {name:'JUNI',        color:'var(--ember)',   cls:''},
+  maia:  {name:'MĀIA',        color:'var(--rose)',    cls:''},
+  being: {name:'THE BEING',   color:'var(--violet)',  cls:'being'},
+  voice: {name:'A VOICE, FAR AWAY', color:'var(--violet)', cls:'being'},
+  sign:  {name:'THE SIGN',    color:'var(--danger)',  cls:'mono'},
+  waiti: {name:'WAITĪ',       color:'var(--violet)',  cls:'being'},
+};
+
+const SCENES = {
+  dream: { bg:'dream', audio:'dream', lines:[
+    ['nar',"Night. The sea breathes like something sleeping."],
+    ['nar',"Three hundred kilometres inland, in a bed that smells of rain, Pirihira dreams — and the dream is not like other dreams."],
+    ['dylan',"Warm water under me. Wind out of the north. And singing — not words. Direction. The song is a direction."],
+    ['nar',"An island rises out of the dark. Green terraces stepping down to white sand. A mountain shaped like a raised hand. Birds he has never seen circle the highest finger of stone."],
+    ['voice',"⟨ Thirty-eight degrees, forty-two minutes south. One hundred sixty-seven degrees, fifty-one minutes west. ⟩"],
+    ['dylan',"Someone is saying numbers. Latitude. Longitude. Saying them the way you'd say a name."],
+    ['nar',"He wakes at 4 a.m. with salt on his lips and the numbers still ringing, clean as struck pounamu."],
+    ['dylan',"38 south... 167 west. I can still hear it. I can still FEEL the sand."],
+  ], next:'maps' },
+
+  maps: { bg:'maps', audio:'quiet', lines:[
+    ['nar',"Google Maps. Satellite view. He types the coordinates with hands that won't quite hold still."],
+    ['nar',"Blue. Nothing but blue, corner to corner. He zooms in until the pixels give up. He zooms out until the whole Pacific fits in his palm."],
+    ['dylan',"Nothing. Not a reef. Not a smudge. Not even a name on the water."],
+    ['dylan',"But I was there. I felt the sand give under my heels. I heard those birds."],
+    ['dylan',"Nan always said the matakite runs in our whakapapa — that some of us are given eyes that see a little further than the horizon."],
+    ['dylan',"Okay. Okay. Juni and Māia. They'll listen. They have to listen."],
+  ], next:'fire' },
+
+  fire: { bg:'fire', audio:'calm', lines:[
+    ['nar',"That evening. A driftwood fire on the cold beach, the kind that spits blue when the salt catches. Juni pokes the embers with a stick of mānuka. Māia is half-asleep against a log."],
+    ['dylan',"I have to tell you two something, and I need you to actually listen. Not nod. Listen."],
+    ['dylan',"Last night I dreamed an island. Not dreamed ABOUT an island — I was THERE. And it came with coordinates. Exact ones."],
+    ['maia',"...Coordinates. Your dream had coordinates."],
+    ['dylan',"38 degrees 42 south, 167 degrees 51 west. I checked every map there is. Nothing. But it's real. I'd stake my life on it."],
+    ['nar',"The fire cracks. A wave draws back over the stones like a long breath. Both of them are looking at him now — and what happens next will decide everything."],
+  ], choice:[
+    { label:'“Okay. It’s not on any map — so show us why you’re so sure.”',
+      sub:'believe him · with sceptical curiosity', goto:'believe' },
+    { label:'“Pirihira. It was a dream. There’s nothing out there, e hoa.”',
+      sub:'doubt him · completely', goto:'doubt' },
+  ]},
+
+  /* ------------- PATH OF DOUBT ------------- */
+  doubt: { bg:'fire', audio:'quiet', lines:[
+    ['maia',"It was a dream, Pirihira. A really vivid one. That's all it was."],
+    ['juni',"There's nothing at those coordinates, e hoa. There'd be SOMETHING. A chart mark. A depth sounding. Anything."],
+    ['nar',"The words land like stones in still water."],
+    ['dylan',"...Right. Sure. Just a dream."],
+    ['nar',"He smiles the way people smile when a door closes somewhere inside them. He stays until the fire is embers, and laughs in all the right places, and neither of them notices that he has already left."],
+  ], next:'doubt2' },
+  doubt2: { bg:'stormDawn', audio:'storm', lines:[
+    ['nar',"Before dawn he pushes his cousin's small waka off the sand. Alone. No crew to hold the course while he sleeps. No second pair of hands for the bailer."],
+    ['dylan',"I'll show them. It's real. I KNOW it's real."],
+    ['nar',"And it is real. That was never the problem."],
+    ['nar',"The first two days are kind. The third is not. The storm comes up out of the south-west with no malice and no mercy — the way storms do — and there is only one of him, and the sea is very large."],
+  ], next:'doubt3' },
+  doubt3: { bg:'lost', audio:'quiet', lines:[
+    ['nar',"They search for nine days. The sea gives back his bailer, one paddle, and nothing else."],
+    ['nar',"Juni stops sleeping. Māia keeps the fire going on the beach every night for a month, in case a light on the shore might mean something to the dark."],
+    ['nar',"The island stays hidden. Perhaps it is still out there, waiting for someone who doesn't have to sail alone."],
+  ], end:'endA' },
+
+  /* ------------- PATH OF BELIEF ------------- */
+  believe: { bg:'fire', audio:'calm', lines:[
+    ['juni',"I'm not saying it's real. I want that on record. I'm saying you're not someone who says 'stake my life' about nothing."],
+    ['juni',"Give me the numbers again. Slowly."],
+    ['maia',"(sitting up) Oh, here we go. Juni's got the face. The face that ruins weekends."],
+    ['nar',"Juni's laptop, tethered to one weak bar of signal, held above head-height like an offering. Not Google Maps this time — bathymetry charts. Seafloor surveys. The maps under the maps, that almost nobody ever looks at."],
+    ['juni',"Okay. Okay okay okay. This is weird."],
+  ], next:'bathy' },
+  bathy: { bg:'bathy', audio:'tense', lines:[
+    ['juni',"Your spot sits dead on a hotspot chain — a line of undersea volcanoes marching north-west across the plate, like footprints. The plate slides, the hotspot stays, it stamps out a new volcano every million years or so."],
+    ['juni',"And right at YOUR coordinates: a seamount. Rises from four thousand metres down to... huh. To almost nothing. Depth marked 'unverified'. Last actual survey: 1987."],
+    ['juni',"AND — there was an uplift swarm in that exact sector two years ago. Hundreds of quakes. The seafloor MOVED, Pirihira. Upward."],
+    ['juni',"The tectonics say there should be an island there. A brand new one — or one that's just come back up for air. The charts aren't wrong because you're dreaming. They're wrong because they're OLD."],
+    ['maia',"So the sea grew an island, and it told Pirihira first."],
+    ['maia',"(grinning) My cousin keeps a waka unua at the marae. She owes me three favours and she only knows about one of them. We're going, aren't we."],
+    ['dylan',"We're going."],
+  ], next:'voyageDay' },
+
+  voyageDay: { bg:'voyageDay', audio:'calm', lines:[
+    ['nar',"Three days of provisioning. Dried fish, fresh water, Juni's solar panels and salvaged radio. Karakia at the boat ramp at first light, Māia's aunty singing them out past the heads."],
+    ['nar',"The waka unua takes the swells like she remembers them — twin hulls speaking to the water in a language older than any chart."],
+    ['maia',"That's the last of the cell coverage. No GPS from here — Juni's charts gave us the heading, but out here the heading needs holding. That part's yours, Pirihira."],
+    ['dylan',"Nan's voice in my head all day: read the swells. Count the birds home at dusk. And at night — trust the whetū."],
+  ], next:'voyageNight' },
+
+  voyageNight: { bg:'voyageNight', audio:'quiet', lines:[
+    ['nar',"Night, day three. The sky opens like a door. The Milky Way pours from horizon to horizon — Te Ikaroa, the long fish, swimming through the dark."],
+    ['juni',"(whispering) Which one do we hold?"],
+    ['dylan',"Te Punga. The anchor. You'd call it the Southern Cross. We keep her off our left shoulder, riding above the mast — hold her there and we run true all night."],
+  ], minigame:'stars', next:'voyageNight2' },
+  voyageNight2: { bg:'voyageNight', audio:'quiet', lines:[
+    ['maia',"Three watches, three for three. Okay, dream-boy. I officially, formally, believe you."],
+    ['nar',"And then, low in the north-east, just before dawn: a small, tight cluster of stars lifts out of the sea. Matariki. The nine sisters, rising with the turning of the year."],
+    ['dylan',"Nan greeted them by name every winter of her life. Matariki. Pōhutukawa. Tupuānuku, Tupuārangi. Waitī, Waitā. Waipuna-ā-rangi. Ururangi. Hiwa-i-te-rangi."],
+    ['juni',"...I count eight."],
+    ['dylan',"(quiet) Waitī. Star of the sweet waters. She's not shining."],
+    ['maia',"Maybe it's cloud."],
+    ['dylan',"It's not cloud. Nan said her light went out years ago — that the winters have felt wrong ever since. Everyone told her it was just her eyes."],
+    ['nar',"They sail on. A pod of dolphins finds them at dawn and stitches silver through the bow-waves for an hour, like an escort. Like a welcome."],
+  ], next:'landfall' },
+
+  landfall: { bg:'landfall', audio:'calm', lines:[
+    ['nar',"Dawn, day five. Māia has the watch. They see it first and cannot speak — they just point, and keep pointing."],
+    ['nar',"A mountain shaped like a raised hand. Green terraces stepping down to white sand. Birds no chart has ever named, wheeling round the highest finger of stone."],
+    ['dylan',"That's it. That's exactly it. Down to the birds."],
+    ['juni',"Pirihira. What is THAT? On the headland."],
+    ['nar',"Angles. Nothing in nature is that straight. White domes like blisters. Aerial masts combing the wind. A double fence with lights strung along it, and a sign, salt-rusted at the bolts:"],
+    ['sign',"JOINT FACILITY “BLACKWELL” · UKUSA / FIVE EYES · AUTHORISED PERSONNEL ONLY · USE OF FORCE AUTHORISED BEYOND THIS POINT"],
+    ['maia',"Five Eyes. A spy base. On an island that officially does not exist."],
+    ['juni',"That's WHY it doesn't exist. You can't leak the coordinates of a place that was never on the map. They didn't miss the island — they erased it."],
+    ['dylan',"The dream didn't carry me five thousand kilometres to look at a fence. There's something inside. I can feel it — like a heartbeat coming up through the sand."],
+  ], next:'basegate' },
+
+  basegate: { bg:'base', audio:'tense', lines:[
+    ['nar',"They wait for dark, hulls hidden under cut fern in a cove the cameras don't love. Then over the rocks, between the sweep of the floodlights, to a service door on the leeward side."],
+    ['juni',"Keypad. Four digits. And I'd bet Māia's cousin's waka that it alarms on the third wrong try."],
+    ['maia',"Great plan so far. Anyone happen to dream a PIN code lately?"],
+    ['dylan',"...The numbers. In the dream — it never said them like coordinates. It said them like a KEY. Like it was handing me a key."],
+  ], minigame:'keypad', next:'cell' },
+
+  cell: { bg:'cell', audio:'dream', lines:[
+    ['nar',"The lock thinks about it. Then: one soft green light, and the door breathes open."],
+    ['juni',"(whispering) I want it on record that this is either the worst security or the strongest dream in recorded history."],
+    ['nar',"Corridors of humming concrete, lit the colour of old ice. Doors with numbers and no names. Then one door heavier than all the rest — and behind it, light."],
+    ['nar',"A being of slow light hangs in a lattice of containment fields. It has no face, and it is unmistakably looking at them. It is not frightening. It is the singing from the dream."],
+    ['being',"⟨ You came. The small dreamer heard. Across all that water — one heart, listening. ⟩"],
+    ['dylan',"It's not talking. It's... it's what I do. What Nan did. But bigger. It's SEEING at us."],
+    ['maia',"Why is it locked up? What could it possibly have DONE?"],
+    ['being',"⟨ I came down, as I come down every winter — to taste the sweet waters of this place while my sisters hold the sky. They caught me before the rivers could hide me. They took the taonga — my singing-stone — and they could not make it sing. So they kept us apart, one room between us, and for eleven years they have studied the silence. ⟩"],
+    ['dylan',"Every winter. Eleven years. ...The dim light."],
+    ['dylan',"You're the missing sister. WAITĪ. Star of the sweet waters. Of Matariki. My Nan greeted you by name every winter of her life."],
+    ['waiti',"⟨ ...She had a voice like rain on a roof, your Nan. I heard her, every single year, among all the many voices. We hear everyone who calls to us. That is what we are FOR. ⟩"],
+    ['nar',"Above them, through four metres of concrete, it is midwinter. Somewhere out there, eight sisters are climbing out of the sea with a gap in their song."],
+    ['juni',"There. Look."],
+    ['nar',"Across the room, in a specimen case with a printed label: a carved shape like a koru folded through one dimension too many, dark as wet pounamu. Waiting."],
+    ['dylan',"They put a taonga in a specimen case. They labelled it INERT."],
+  ], next:'breakout' },
+
+  breakout: { bg:'alarm', audio:'alarm', lines:[
+    ['nar',"Juni kills the containment field the way Juni fixes everything: by speed-reading the manual nobody else ever opened, and then pulling exactly one plug."],
+    ['nar',"Every light on the island turns red at once. Somewhere above them, boots. Many boots."],
+    ['maia',"GO! I've got the door — Pirihira, the stone, NOW!"],
+    ['nar',"The case isn't even locked. Why would it be? It's INERT. Pirihira lifts the taonga out with both hands, the way you carry a sleeping child."],
+    ['nar',"It is warm. It weighs nothing. It weighs everything."],
+  ], minigame:'reunite', next:'radiance' },
+
+  radiance: { bg:'radiance', audio:'wonder', lines:[
+    ['nar',"He places it into Waitī's light — and the world SINGS."],
+    ['nar',"The alarms don't stop. They simply stop mattering — every siren, every shout, every boot on every stair folds into a music that has room for all of it, the way the sea has room for every river."],
+    ['waiti',"⟨ This is te rongo-ā-ao. The universal sensing. Everything speaking, all at once, all the time — stone to root, current to whale, star to star. Your people never lost this ear. They only turned it toward the sea, and the sea kept it safe for you. ⟩"],
+    ['waiti',"⟨ Little dreamer. You carried the ember your whole life and let no one blow it out — not even the ones who loved you and could not see it. Let me do the only thing I can do in return. Let me open the door around it. ⟩"],
+    ['nar',"She touches Pirihira — not his body. The deep part. The part that dreamed."],
+    ['dylan',"...Oh."],
+    ['dylan',"I can feel the whales, two bays over. Three of them. One is old. I can feel the weather coming, three days out, soft as a change in someone's voice."],
+    ['dylan',"I can feel where Nan's people sailed. All the old routes — they're still THERE, lit up under the water like paths at dusk. Nobody ever lost them. They were just waiting to be felt again."],
+    ['nar',"His matakitetanga, unfolding like a sail finally given wind. Not given to him. RETURNED to him."],
+  ], next:'epilogue' },
+
+  epilogue: { bg:'epilogue', audio:'wonder', lines:[
+    ['nar',"Waitī carries them over both fences like a kind thought. The waka is exactly where they hid her. Every radar on the island is suddenly, and for no reason its operators will ever be able to explain, looking the other way."],
+    ['waiti',"⟨ The island will keep itself hidden now — it has someone to sing with again. But never hidden from you three. Never from you. ⟩"],
+    ['nar',"She rises — slow light against slow stars — climbing the long dark toward the north-east, where a small cluster is lifting out of the sea to meet her."],
+    ['nar',"And low over the water, for the first time in eleven winters, nine sisters shine together. Matariki, complete. The year can finally turn."],
+    ['maia',"So. Home?"],
+    ['juni',"Home. I'm steering the first watch — Pirihira, you'll want the charts?"],
+    ['dylan',"(smiling, eyes closed, one hand flat on the hull) No charts."],
+    ['dylan',"I'll steer."],
+    ['nar',"And he does — no charts, and no stars needed now — the whole ocean singing him true, all the way home."],
+  ], end:'endB' },
+};
+
+/* ================================================================
+   ENGINE
+   ================================================================ */
+const game = {
+  scene:null, line:0, bg:'oceanNight', mode:'title',   /* title|line|choice|stars|keypad|end */
+  typing:false, typeTimer:null, freed:false,
+  fadeAt:-9, shownChars:0, fullText:'',
+  taonga:{x:0,y:0,drag:false},
+};
+const dlg = $('dlg'), txt = $('txt'), plate = $('plate'), adv = $('adv'), choicesEl = $('choices');
+
+function setBg(bg){
+  if(bg === game.bg) return;
+  game.bg = bg; game.fadeAt = NOW;
+  embers.length = 0;
+}
+function enterScene(id){
+  const sc = SCENES[id];
+  game.scene = id; game.line = 0;
+  setBg(sc.bg);
+  if(sc.audio) auScene(sc.audio);
+  if(id==='radiance') game.freed = true;
+  showLine();
+}
+function showLine(){
+  const sc = SCENES[game.scene];
+  if(game.line >= sc.lines.length){ afterLines(sc); return; }
+  game.mode = 'line';
+  const [who, text] = sc.lines[game.line];
+  const sp = SPEAKERS[who];
+  dlg.style.display = 'block';
+  dlg.style.borderLeftColor = sp.color.startsWith('var') ? getComputedStyle(document.documentElement)
+      .getPropertyValue(sp.color.slice(4,-1)) : sp.color;
+  plate.textContent = sp.name;
+  plate.style.color = sp.color;
+  plate.style.display = sp.name ? 'block':'none';
+  txt.className = sp.cls;
+  game.fullText = text; game.shownChars = 0; game.typing = true;
+  adv.classList.remove('on');
+  clearInterval(game.typeTimer);
+  const speed = REDUCED ? 4 : 16;
+  game.typeTimer = setInterval(()=>{
+    game.shownChars += 1 + (game.fullText.length>220 ? 1:0);
+    if(game.shownChars >= game.fullText.length){
+      game.shownChars = game.fullText.length;
+      clearInterval(game.typeTimer); game.typing = false; adv.classList.add('on');
+    }
+    txt.textContent = game.fullText.slice(0, game.shownChars);
+  }, speed);
+}
+function afterLines(sc){
+  dlg.style.display = 'none';
+  if(sc.choice){ showChoices(sc.choice); return; }
+  if(sc.minigame === 'stars'){ startStarGame(); return; }
+  if(sc.minigame === 'keypad'){ startKeypad(); return; }
+  if(sc.minigame === 'reunite'){ startReunite(); return; }
+  if(sc.end){ showEnd(sc.end); return; }
+  if(sc.next){ enterScene(sc.next); return; }
+}
+function advance(){
+  if(game.mode !== 'line') return;
+  if(game.typing){
+    clearInterval(game.typeTimer); game.typing = false;
+    game.shownChars = game.fullText.length;
+    txt.textContent = game.fullText;
+    adv.classList.add('on');
+    return;
+  }
+  game.line++;
+  showLine();
+}
+function showChoices(list){
+  game.mode = 'choice';
+  choicesEl.innerHTML = '';
+  choicesEl.style.display = 'flex';
+  list.forEach(c=>{
+    const b = document.createElement('button');
+    b.className = 'choice';
+    b.innerHTML = `${c.label}<em>${c.sub}</em>`;
+    b.addEventListener('click', e=>{
+      e.stopPropagation();
+      choicesEl.style.display = 'none';
+      enterScene(c.goto);
+    });
+    choicesEl.appendChild(b);
+  });
+}
+function showEnd(which){
+  game.mode = 'end';
+  dlg.style.display = 'none';
+  $(which).style.display = 'flex';
+  auScene(which==='endA' ? 'quiet' : 'wonder');
+}
+
+/* ---------- star minigame ---------- */
+const starG = { hits:0, cx:0, lastTap:-9, fb:'', fbAt:-9 };
+function startStarGame(){
+  game.mode = 'stars';
+  starG.hits = 0; starG.fb = '';
+  $('starui').style.display = 'flex';
+  updatePips();
+}
+function updatePips(){
+  $('star-pips').textContent = ['✧ ✧ ✧','✦ ✧ ✧','✦ ✦ ✧','✦ ✦ ✦'][starG.hits];
+}
+function starGameDraw(t){
+  const cx = W*.5 + Math.sin(t*.42)*W*.3;
+  starG.cx = cx;
+  const my = H*.24;
+  /* the mark above the mast */
+  ctx.strokeStyle = 'rgba(63,208,168,.55)'; ctx.lineWidth = 1.4; ctx.setLineDash([5,6]);
+  ctx.strokeRect(W*.5-W*.05, my-56, W*.1, 112);
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(63,208,168,.25)';
+  ctx.beginPath(); ctx.moveTo(W*.5, my+56); ctx.lineTo(W*.5, H*.72-96*Math.min(W,900)/900); ctx.stroke();
+  drawCrux(cx, my, 26, true, t);
+  if(NOW - starG.fbAt < 2.2 && starG.fb){
+    $('star-fb').textContent = starG.fb;
+  } else $('star-fb').textContent = '';
+}
+function starTap(){
+  if(NOW - starG.lastTap < .35) return;
+  starG.lastTap = NOW;
+  if(Math.abs(starG.cx - W*.5) < W*.052){
+    starG.hits++;
+    starG.fb = ['Held true. ✦','Again — steady as she goes. ✦','She runs true. ✦'][Math.min(starG.hits-1,2)];
+    starG.fbAt = NOW;
+    updatePips();
+    if(starG.hits >= 3){
+      setTimeout(()=>{
+        $('starui').style.display = 'none';
+        enterScene(SCENES[game.scene].next);
+      }, 900);
+    }
+  } else {
+    starG.fb = Math.abs(starG.cx-W*.5) < W*.14 ? 'Almost — breathe with the swell.' : 'Too soon. Let her drift to you.';
+    starG.fbAt = NOW;
+  }
+}
+
+/* ---------- reunite (drag the taonga home) ---------- */
+function beingCenter(){ return { x:W*.5, y:H*.42, r:Math.min(W,H)*.16 }; }
+function startReunite(){
+  game.mode = 'reunite';
+  game.taonga = { x:W*.82, y:H*.6, drag:false };
+  $('dragui').style.display = 'block';
+}
+function reuniteCheck(release){
+  const tk = game.taonga, b = beingCenter();
+  const d = Math.hypot(tk.x-b.x, tk.y-b.y);
+  if(d < b.r*(release ? 1.15 : .5)){
+    game.mode = 'transition';
+    tk.x = b.x; tk.y = b.y;
+    $('dragui').style.display = 'none';
+    const fl = $('flash');
+    fl.style.transition = 'opacity .5s'; fl.style.opacity = .85;
+    setTimeout(()=>{ fl.style.opacity = 0; }, 550);
+    setTimeout(()=>{ enterScene('radiance'); }, 750);
+  }
+}
+
+/* ---------- keypad ---------- */
+const CODE = '3842';
+const kp = { entry:'', tries:0 };
+function startKeypad(){
+  game.mode = 'keypad';
+  kp.entry = ''; kp.tries = 0;
+  const grid = $('kp-grid');
+  if(!grid.childElementCount){
+    '123456789✕0↵'.split('').forEach(k=>{
+      const b = document.createElement('button');
+      b.className = 'kp'; b.textContent = k;
+      b.addEventListener('click', e=>{ e.stopPropagation(); kpPress(k); });
+      grid.appendChild(b);
+    });
+  }
+  $('kp-hint').textContent = 'Four digits. The cameras sweep back in ninety seconds.';
+  kpShow();
+  $('keypad').style.display = 'flex';
+}
+function kpShow(){
+  $('kp-display').textContent = kp.entry.padEnd(4,'·').split('').join(' ');
+}
+function kpPress(k){
+  const disp = $('kp-display');
+  if(k==='✕'){ kp.entry=''; kpShow(); return; }
+  if(k==='↵'){
+    if(kp.entry.length < 4) return;
+    if(kp.entry === CODE){
+      disp.style.color = 'var(--pounamu)';
+      $('kp-hint').textContent = 'The lock thinks about it...';
+      setTimeout(()=>{
+        $('keypad').style.display = 'none';
+        disp.style.color = '';
+        enterScene(SCENES[game.scene].next);
+      }, 850);
+    } else {
+      kp.tries++; kp.entry=''; kpShow();
+      disp.classList.remove('err'); void disp.offsetWidth; disp.classList.add('err');
+      $('kp-hint').textContent = kp.tries===1
+        ? 'PIRIHIRA: "The dream... it said them like a key. The first part. South. Three-eight..."'
+        : kp.tries===2
+        ? 'PIRIHIRA: "Three-eight — then the minutes. Four-two. 3-8-4-2. Trust the dream."'
+        : 'MĀIA: "It\'s 3842, just — it\'s 3842. Pirihira literally told us."';
+    }
+    return;
+  }
+  if(kp.entry.length<4){ kp.entry += k; kpShow(); }
+}
+
+/* ---------- input ---------- */
+$('stage').addEventListener('pointerdown', e=>{
+  auInit();
+  if(game.mode === 'line') advance();
+  else if(game.mode === 'stars') starTap();
+  else if(game.mode === 'reunite'){
+    const tk = game.taonga;
+    if(Math.hypot(e.clientX-tk.x, e.clientY-tk.y) < 75) tk.drag = true;
+  }
+});
+addEventListener('pointermove', e=>{
+  if(game.mode==='reunite' && game.taonga.drag){
+    game.taonga.x = e.clientX; game.taonga.y = e.clientY;
+    reuniteCheck(false);
+  }
+});
+addEventListener('pointerup', ()=>{
+  if(game.mode==='reunite' && game.taonga.drag){
+    game.taonga.drag = false;
+    reuniteCheck(true);
+  }
+});
+addEventListener('keydown', e=>{
+  if(e.code==='Space' || e.code==='Enter'){
+    e.preventDefault(); auInit();
+    if(game.mode==='line') advance();
+    else if(game.mode==='stars') starTap();
+    else if(game.mode==='title') startGame();
+    else if(game.mode==='reunite'){                 /* keyboard path: each press carries it closer */
+      const tk = game.taonga, b = beingCenter();
+      tk.x += (b.x-tk.x)*.4; tk.y += (b.y-tk.y)*.4;
+      reuniteCheck(false);
+    }
+  }
+  if(game.mode==='keypad'){
+    if(/^[0-9]$/.test(e.key)) kpPress(e.key);
+    if(e.key==='Enter') kpPress('↵');
+    if(e.key==='Backspace') kpPress('✕');
+  }
+});
+$('begin').addEventListener('click', e=>{ e.stopPropagation(); startGame(); });
+$('retryA').addEventListener('click', e=>{ e.stopPropagation();
+  $('endA').style.display='none'; enterScene('fire'); });
+$('again').addEventListener('click', e=>{ e.stopPropagation();
+  $('endB').style.display='none'; game.freed=false; enterScene('dream'); });
+
+function startGame(){
+  auInit();
+  $('title').style.display = 'none';
+  enterScene('dream');
+}
+
+/* debug/test hook */
+window.__moutere = { goto:enterScene, game, SCENES };
+
+/* ---------- main loop ---------- */
+let NOW = 0, t0 = performance.now();
+function frame(){
+  NOW = (performance.now()-t0)/1000;
+  const t = NOW * TSCALE;
+  ctx.clearRect(0,0,W,H);
+  (R[game.bg] || R.oceanNight)(t);
+  /* fade in from black on scene change */
+  const f = 1 - Math.min(1,(NOW - game.fadeAt)/1.1);
+  if(f > 0){ ctx.fillStyle = `rgba(1,3,8,${f})`; ctx.fillRect(0,0,W,H); }
+  auChime(NOW);
+  requestAnimationFrame(frame);
+}
+$('title').style.display = 'flex';
+game.mode = 'title';
+frame();
+</script>
+</html>
