@@ -71,23 +71,34 @@
   .card.grief .btn:hover{background:rgba(143,168,189,.1);box-shadow:0 0 30px rgba(143,168,189,.2)}
   #title,#endA,#endB{display:none}
 
-  /* ---------- keypad ---------- */
-  #keypad{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);display:none;
-    flex-direction:column;align-items:center;gap:14px;background:rgba(2,5,10,.9);
-    border:1px solid rgba(255,83,72,.35);padding:26px 30px 30px;border-radius:3px;z-index:6;
-    box-shadow:0 0 60px rgba(255,83,72,.12), inset 0 0 30px rgba(0,0,0,.6)}
-  #kp-label{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--danger)}
-  #kp-display{font-family:var(--mono);font-size:26px;letter-spacing:.55em;color:var(--star);
-    background:#050a12;border:1px solid rgba(233,242,247,.15);padding:10px 8px 10px 20px;
-    width:200px;text-align:center;min-height:50px;border-radius:2px}
-  #kp-display.err{color:var(--danger);animation:shake .35s}
-  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
-  #kp-grid{display:grid;grid-template-columns:repeat(3,64px);gap:9px}
-  .kp{font-family:var(--mono);font-size:19px;color:var(--star);background:rgba(18,34,56,.7);
-    border:1px solid rgba(233,242,247,.14);padding:14px 0;cursor:pointer;border-radius:2px;transition:all .15s}
-  .kp:hover{border-color:var(--danger);background:rgba(255,83,72,.12)}
-  #kp-hint{font-style:italic;color:var(--mist);font-size:13px;max-width:250px;text-align:center;
+  /* ---------- hack (Juni's splice) ---------- */
+  #hack{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);display:none;
+    flex-direction:column;align-items:center;gap:14px;background:rgba(2,5,10,.92);
+    border:1px solid rgba(63,208,168,.35);padding:24px 28px 26px;border-radius:3px;z-index:6;
+    box-shadow:0 0 60px rgba(63,208,168,.12), inset 0 0 30px rgba(0,0,0,.6)}
+  #hk-label{font-family:var(--mono);font-size:10px;letter-spacing:.28em;color:var(--pounamu)}
+  #hk-board{display:flex;align-items:center;gap:10px}
+  .hk-port{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--mist);
+    writing-mode:vertical-rl;text-orientation:mixed;padding:6px 3px;border:1px solid rgba(233,242,247,.14);
+    border-radius:2px;background:#050a12;transition:all .3s}
+  .hk-port.on{color:var(--pounamu);border-color:var(--pounamu);
+    box-shadow:0 0 14px rgba(63,208,168,.5);text-shadow:0 0 8px rgba(63,208,168,.8)}
+  #hk-grid{display:grid;grid-template-columns:repeat(4,56px);grid-auto-rows:56px;gap:6px}
+  .hktile{position:relative;background:#0a141f;border:1px solid rgba(63,208,168,.16);
+    border-radius:2px;cursor:pointer;padding:0;transition:border-color .2s}
+  .hktile:hover,.hktile:focus-visible{border-color:rgba(63,208,168,.55);outline:none}
+  .hktile .rot{position:absolute;inset:0;transition:transform .18s ease}
+  .hktile .bar{position:absolute;background:#25384a;border-radius:2px;transition:background .2s,box-shadow .2s}
+  .hktile .rot::after{content:'';position:absolute;left:50%;top:50%;width:12px;height:12px;
+    margin:-6px 0 0 -6px;border-radius:50%;background:#25384a;transition:background .2s,box-shadow .2s}
+  .hktile .b1.v{left:50%;top:0;bottom:50%;width:8px;margin-left:-4px}
+  .hktile .b1.vfull{left:50%;top:0;bottom:0;width:8px;margin-left:-4px}
+  .hktile .b2.h{top:50%;left:50%;right:0;height:8px;margin-top:-4px}
+  .hktile.lit .bar,.hktile.lit .rot::after{background:var(--pounamu);
+    box-shadow:0 0 10px rgba(63,208,168,.75)}
+  #hk-hint{font-style:italic;color:var(--mist);font-size:13px;max-width:300px;text-align:center;
     line-height:1.5;min-height:2.6em}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 
   /* ---------- star game ---------- */
   #starui{position:absolute;left:50%;top:6vh;transform:translateX(-50%);display:none;
@@ -151,11 +162,14 @@
   </div>
   <div id="choices"></div>
 
-  <div id="keypad">
-    <div id="kp-label">BLACKWELL · SVC-DOOR 3 · ENTER CODE</div>
-    <div id="kp-display"></div>
-    <div id="kp-grid"></div>
-    <div id="kp-hint">Four digits. The cameras sweep back in ninety seconds.</div>
+  <div id="hack">
+    <div id="hk-label">BLACKWELL · SVC-DOOR 3 · MAINTENANCE BUS · SPLICE ACTIVE</div>
+    <div id="hk-board">
+      <div class="hk-port on" id="hk-src">PWR</div>
+      <div id="hk-grid"></div>
+      <div class="hk-port" id="hk-lock">LOCK</div>
+    </div>
+    <div id="hk-hint">Juni's splice is in. Tap a junction to rotate it — route power to the lock.</div>
   </div>
 
   <div id="dragui">The taonga is warm in Pirihira's hands. <b>Drag it home — into Waitī's light.</b></div>
@@ -290,32 +304,40 @@ function drawWakaUnua(x, y, s, t, sailTint){
   ctx.fillRect(-30,-18,9,10); ctx.fillRect(-12,-17,9,9); ctx.fillRect(20,-19,9,11);
   ctx.restore();
 }
-/* the island — a mountain like a raised hand */
+/* the island — a mountain like a raised hand: thumb, four fingers, headland */
 function drawIsland(x, y, s, color, t, withBase){
   ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(-260,0);
-  ctx.quadraticCurveTo(-200,-14,-160,-36);
-  ctx.lineTo(-118,-64); ctx.lineTo(-92,-52);                       /* knuckles */
-  ctx.lineTo(-60,-108); ctx.lineTo(-42,-96);                       /* finger */
-  ctx.lineTo(-16,-150); ctx.lineTo(4,-128);                        /* tallest finger */
-  ctx.lineTo(30,-118); ctx.lineTo(48,-88);
-  ctx.lineTo(78,-74); ctx.lineTo(110,-44);
-  ctx.quadraticCurveTo(180,-16,260,0);
+  ctx.quadraticCurveTo(-225,-8,-200,-22);                          /* rising shore */
+  ctx.lineTo(-182,-34);
+  ctx.lineTo(-166,-72); ctx.lineTo(-152,-76); ctx.lineTo(-146,-48);/* thumb, leaning out */
+  ctx.lineTo(-136,-42);                                            /* web of the thumb */
+  ctx.lineTo(-124,-50);
+  ctx.lineTo(-116,-88); ctx.lineTo(-104,-94); ctx.lineTo(-96,-54); /* pinky */
+  ctx.lineTo(-88,-56);
+  ctx.lineTo(-82,-118); ctx.lineTo(-70,-124); ctx.lineTo(-60,-58); /* ring */
+  ctx.lineTo(-52,-60);
+  ctx.lineTo(-46,-146); ctx.lineTo(-32,-152); ctx.lineTo(-22,-62); /* middle — highest finger of stone */
+  ctx.lineTo(-14,-58);
+  ctx.lineTo(-8,-126); ctx.lineTo(4,-130); ctx.lineTo(14,-50);     /* index */
+  ctx.quadraticCurveTo(30,-36,60,-32);                             /* down the hand's edge */
+  ctx.quadraticCurveTo(120,-26,180,-20);                           /* flat headland */
+  ctx.quadraticCurveTo(225,-10,260,0);
   ctx.closePath(); ctx.fill();
   if(withBase){
-    /* radomes + aerials on the right headland */
+    /* radomes + aerials seated on the headland */
     ctx.fillStyle = '#dfe8ef';
-    ctx.beginPath(); ctx.arc(120,-46,9,Math.PI,0); ctx.fill();
-    ctx.beginPath(); ctx.arc(146,-38,7,Math.PI,0); ctx.fill();
+    ctx.beginPath(); ctx.arc(120,-25,9,Math.PI,0); ctx.fill();
+    ctx.beginPath(); ctx.arc(145,-22,7,Math.PI,0); ctx.fill();
     ctx.strokeStyle = '#c9d4dd'; ctx.lineWidth = 1.6;
-    ctx.beginPath(); ctx.moveTo(96,-44); ctx.lineTo(96,-86); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(166,-34); ctx.lineTo(166,-70); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(100,-27); ctx.lineTo(100,-68); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(166,-20); ctx.lineTo(166,-52); ctx.stroke();
     const blink = (Math.sin(t*2.4)>0.2)?1:0.15;
     ctx.fillStyle = `rgba(255,83,72,${blink})`;
-    ctx.beginPath(); ctx.arc(96,-88,2.4,0,6.29); ctx.fill();
-    ctx.beginPath(); ctx.arc(166,-72,2.2,0,6.29); ctx.fill();
+    ctx.beginPath(); ctx.arc(100,-70,2.4,0,6.29); ctx.fill();
+    ctx.beginPath(); ctx.arc(166,-54,2.2,0,6.29); ctx.fill();
   }
   ctx.restore();
 }
@@ -601,7 +623,7 @@ const R = {
     const dx = W*.5-70, dy = H*.44;
     ctx.fillStyle = '#080b10'; ctx.strokeStyle = '#1c242e'; ctx.lineWidth=3;
     ctx.fillRect(dx,dy,140,H*.42); ctx.strokeRect(dx,dy,140,H*.42);
-    const ka = game.mode==='keypad' ? .8+.2*Math.sin(t*3) : .35;
+    const ka = game.mode==='hack' ? .8+.2*Math.sin(t*3) : .35;
     ctx.fillStyle = `rgba(255,83,72,${ka})`;
     ctx.fillRect(dx+152, dy+50, 26, 34);
     /* camera */
@@ -880,14 +902,16 @@ const SCENES = {
 
   basegate: { bg:'base', audio:'tense', lines:[
     ['nar',"They wait for dark, hulls hidden under cut fern in a cove the cameras don't love. Then over the rocks, between the sweep of the floodlights, to a service door on the leeward side."],
-    ['juni',"Keypad. Four digits. And I'd bet Māia's cousin's waka that it alarms on the third wrong try."],
+    ['juni',"Keypad. Four digits, three tries — and then it screams to every guard post on the island."],
     ['maia',"Great plan so far. Anyone happen to dream a PIN code lately?"],
-    ['dylan',"...The numbers. In the dream — it never said them like coordinates. It said them like a KEY. Like it was handing me a key."],
-  ], minigame:'keypad', next:'cell' },
+    ['juni',"Better. We don't guess. A lock is just a circuit that hasn't met me yet."],
+    ['nar',"Juni pops the maintenance panel with one fingernail, clips a splice onto the bus, and grins at the wiring the way other people grin at a menu."],
+    ['maia',"(whispering) Be nice to the spy door, Juni."],
+  ], minigame:'hack', next:'cell' },
 
   cell: { bg:'cell', audio:'dream', lines:[
-    ['nar',"The lock thinks about it. Then: one soft green light, and the door breathes open."],
-    ['juni',"(whispering) I want it on record that this is either the worst security or the strongest dream in recorded history."],
+    ['nar',"The lock hears what it thinks is a maintenance request. It thinks about it. Then: one soft green light, and the door breathes open."],
+    ['juni',"(whispering) Their classified five-nation maintenance bus doesn't even have a checksum. Embarrassing. For them, I mean."],
     ['nar',"Corridors of humming concrete, lit the colour of old ice. Doors with numbers and no names. Then one door heavier than all the rest — and behind it, light."],
     ['nar',"A being of slow light hangs in a lattice of containment fields. It has no face, and it is unmistakably looking at them. It is not frightening. It is the singing from the dream."],
     ['being',"⟨ You came. The small dreamer heard. Across all that water — one heart, listening. ⟩"],
@@ -940,7 +964,7 @@ const SCENES = {
    ENGINE
    ================================================================ */
 const game = {
-  scene:null, line:0, bg:'oceanNight', mode:'title',   /* title|line|choice|stars|keypad|end */
+  scene:null, line:0, bg:'oceanNight', mode:'title',   /* title|line|choice|stars|hack|reunite|end */
   typing:false, typeTimer:null, freed:false,
   fadeAt:-9, shownChars:0, fullText:'',
   taonga:{x:0,y:0,drag:false},
@@ -990,7 +1014,7 @@ function afterLines(sc){
   dlg.style.display = 'none';
   if(sc.choice){ showChoices(sc.choice); return; }
   if(sc.minigame === 'stars'){ startStarGame(); return; }
-  if(sc.minigame === 'keypad'){ startKeypad(); return; }
+  if(sc.minigame === 'hack'){ startHack(); return; }
   if(sc.minigame === 'reunite'){ startReunite(); return; }
   if(sc.end){ showEnd(sc.end); return; }
   if(sc.next){ enterScene(sc.next); return; }
@@ -1097,53 +1121,88 @@ function reuniteCheck(release){
   }
 }
 
-/* ---------- keypad ---------- */
-const CODE = '3842';
-const kp = { entry:'', tries:0 };
-function startKeypad(){
-  game.mode = 'keypad';
-  kp.entry = ''; kp.tries = 0;
-  const grid = $('kp-grid');
+/* ---------- hack: Juni splices the door — rotate junctions, route power ---------- */
+/* dirs: 0=N 1=E 2=S 3=W. 'I' base = N-S, 'L' base = N-E. 3 rows x 4 cols. */
+/* Power enters (r1,c0) from the west; the lock is east of (r1,c3). */
+const HK_GRID = [
+  [{t:'L',sol:2},{t:'L',sol:1},{t:'I',sol:1},{t:'L',sol:2}],
+  [{t:'I',sol:1},{t:'L',sol:3},{t:'I',sol:0},{t:'L',sol:0}],
+  [{t:'L',sol:0},{t:'I',sol:0},{t:'L',sol:3},{t:'I',sol:1}],
+];
+const HACK = { tiles:[], solved:false };
+function hkDirs(tile){
+  const base = tile.t==='I' ? [0,2] : [0,1];
+  return base.map(d => (d+tile.rot)%4);
+}
+function startHack(){
+  game.mode = 'hack';
+  HACK.solved = false;
+  const grid = $('hk-grid');
   if(!grid.childElementCount){
-    '123456789✕0↵'.split('').forEach(k=>{
+    HACK.tiles = [];
+    HK_GRID.forEach((row,r)=>row.forEach((def,c)=>{
       const b = document.createElement('button');
-      b.className = 'kp'; b.textContent = k;
-      b.addEventListener('click', e=>{ e.stopPropagation(); kpPress(k); });
+      b.className = 'hktile';
+      b.innerHTML = def.t==='I'
+        ? '<div class="rot"><div class="bar b1 vfull"></div></div>'
+        : '<div class="rot"><div class="bar b1 v"></div><div class="bar b2 h"></div></div>';
+      const tile = { ...def, r, c, rot:0, el:b };
+      b.addEventListener('click', e=>{
+        e.stopPropagation();
+        if(HACK.solved) return;
+        tile.rot = (tile.rot+1)%4;
+        hkUpdate();
+      });
       grid.appendChild(b);
-    });
+      HACK.tiles.push(tile);
+    }));
   }
-  $('kp-hint').textContent = 'Four digits. The cameras sweep back in ninety seconds.';
-  kpShow();
-  $('keypad').style.display = 'flex';
-}
-function kpShow(){
-  $('kp-display').textContent = kp.entry.padEnd(4,'·').split('').join(' ');
-}
-function kpPress(k){
-  const disp = $('kp-display');
-  if(k==='✕'){ kp.entry=''; kpShow(); return; }
-  if(k==='↵'){
-    if(kp.entry.length < 4) return;
-    if(kp.entry === CODE){
-      disp.style.color = 'var(--pounamu)';
-      $('kp-hint').textContent = 'The lock thinks about it...';
-      setTimeout(()=>{
-        $('keypad').style.display = 'none';
-        disp.style.color = '';
-        enterScene(SCENES[game.scene].next);
-      }, 850);
-    } else {
-      kp.tries++; kp.entry=''; kpShow();
-      disp.classList.remove('err'); void disp.offsetWidth; disp.classList.add('err');
-      $('kp-hint').textContent = kp.tries===1
-        ? 'PIRIHIRA: "The dream... it said them like a key. The first part. South. Three-eight..."'
-        : kp.tries===2
-        ? 'PIRIHIRA: "Three-eight — then the minutes. Four-two. 3-8-4-2. Trust the dream."'
-        : 'MĀIA: "It\'s 3842, just — it\'s 3842. Pirihira literally told us."';
+  /* scramble: offset by 1-3 so no tile starts solved (odd offsets for I tiles,
+     whose connectivity repeats every 2 turns); re-roll if an accidental path lights up */
+  do {
+    for(const tile of HACK.tiles){
+      const off = tile.t==='I' ? 1 : 1+Math.floor(Math.random()*3);
+      tile.rot = (tile.sol + off) % 4;
     }
-    return;
+  } while(hkFlood().done);
+  $('hk-hint').textContent = "Juni's splice is in. Tap a junction to rotate it — route power to the lock.";
+  $('hk-lock').classList.remove('on');
+  hkUpdate();
+  $('hack').style.display = 'flex';
+}
+function hkTile(r,c){ return HACK.tiles.find(x=>x.r===r && x.c===c); }
+function hkFlood(){
+  /* flood power from the west port of (1,0); done when it exits (1,3) east */
+  const lit = new Set();
+  const start = hkTile(1,0);
+  const queue = [];
+  if(hkDirs(start).includes(3)){ lit.add(start); queue.push(start); }
+  const STEP = [[-1,0],[0,1],[1,0],[0,-1]];
+  while(queue.length){
+    const cur = queue.pop();
+    for(const d of hkDirs(cur)){
+      const nr = cur.r+STEP[d][0], nc = cur.c+STEP[d][1];
+      const nb = hkTile(nr,nc);
+      if(nb && !lit.has(nb) && hkDirs(nb).includes((d+2)%4)){ lit.add(nb); queue.push(nb); }
+    }
   }
-  if(kp.entry.length<4){ kp.entry += k; kpShow(); }
+  const end = hkTile(1,3);
+  return { lit, done: lit.has(end) && hkDirs(end).includes(1) };
+}
+function hkUpdate(){
+  for(const tile of HACK.tiles)
+    tile.el.querySelector('.rot').style.transform = `rotate(${tile.rot*90}deg)`;
+  const { lit, done } = hkFlood();
+  for(const tile of HACK.tiles) tile.el.classList.toggle('lit', lit.has(tile));
+  if(done && !HACK.solved){
+    HACK.solved = true;
+    $('hk-lock').classList.add('on');
+    $('hk-hint').textContent = 'JUNI: "And the lock hears a perfectly legitimate maintenance request..."';
+    setTimeout(()=>{
+      $('hack').style.display = 'none';
+      enterScene(SCENES[game.scene].next);
+    }, 1100);
+  }
 }
 
 /* ---------- input ---------- */
@@ -1169,6 +1228,7 @@ addEventListener('pointerup', ()=>{
   }
 });
 addEventListener('keydown', e=>{
+  if(game.mode==='hack') return;                    /* let Tab/Enter/Space operate the tiles natively */
   if(e.code==='Space' || e.code==='Enter'){
     e.preventDefault(); auInit();
     if(game.mode==='line') advance();
@@ -1179,11 +1239,6 @@ addEventListener('keydown', e=>{
       tk.x += (b.x-tk.x)*.4; tk.y += (b.y-tk.y)*.4;
       reuniteCheck(false);
     }
-  }
-  if(game.mode==='keypad'){
-    if(/^[0-9]$/.test(e.key)) kpPress(e.key);
-    if(e.key==='Enter') kpPress('↵');
-    if(e.key==='Backspace') kpPress('✕');
   }
 });
 $('begin').addEventListener('click', e=>{ e.stopPropagation(); startGame(); });
@@ -1199,7 +1254,7 @@ function startGame(){
 }
 
 /* debug/test hook */
-window.__moutere = { goto:enterScene, game, SCENES };
+window.__moutere = { goto:enterScene, game, SCENES, HACK };
 
 /* ---------- main loop ---------- */
 let NOW = 0, t0 = performance.now();
