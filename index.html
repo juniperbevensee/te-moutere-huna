@@ -713,12 +713,22 @@ const R = {
    AUDIO — procedural sea, drone, chimes
    ================================================================ */
 const AU = { ctx:null, master:null, noiseGain:null, filter:null, droneGain:null,
-             muted:false, profile:'calm', nextChime:0, alarmOsc:null, alarmGain:null };
+             muted:false, profile:'calm', nextChime:0, alarmOsc:null, alarmGain:null, airGain:null };
 function auInit(){
-  if(AU.ctx) return;
+  if(AU.ctx){
+    /* iOS suspends contexts liberally — re-arm on any later gesture */
+    if(AU.ctx.state!=='running') AU.ctx.resume().catch(()=>{});
+    return;
+  }
+  try{
+    /* iOS 16.4+: route through the media channel (like a music app),
+       audible even when the ringer switch is on silent */
+    if(navigator.audioSession) navigator.audioSession.type = 'playback';
+  }catch(e){}
   try{
     const A = new (window.AudioContext||window.webkitAudioContext)();
     AU.ctx = A;
+    if(A.state!=='running') A.resume().catch(()=>{});
     AU.master = A.createGain(); AU.master.gain.value = AU.muted?0:.9; AU.master.connect(A.destination);
     const buf = A.createBuffer(1, A.sampleRate*2, A.sampleRate);
     const d = buf.getChannelData(0);
@@ -728,6 +738,10 @@ function auInit(){
     AU.filter = A.createBiquadFilter(); AU.filter.type='lowpass'; AU.filter.frequency.value=420;
     AU.noiseGain = A.createGain(); AU.noiseGain.gain.value = .12;
     src.connect(AU.filter); AU.filter.connect(AU.noiseGain); AU.noiseGain.connect(AU.master);
+    /* high 'spray' band so the sea reads on phone speakers, which lose everything below ~500Hz */
+    const air = A.createBiquadFilter(); air.type='bandpass'; air.frequency.value=1500; air.Q.value=.6;
+    AU.airGain = A.createGain(); AU.airGain.gain.value = .045;
+    src.connect(air); air.connect(AU.airGain); AU.airGain.connect(AU.master);
     src.start();
     const o1 = A.createOscillator(), o2 = A.createOscillator();
     o1.frequency.value = 55; o2.frequency.value = 55.6; o1.type = o2.type = 'sine';
@@ -755,7 +769,15 @@ function auScene(p){
   }[p] || {n:.1, f:400, d:.035, a:0};
   set(AU.noiseGain.gain, cfg.n); set(AU.filter.frequency, cfg.f);
   set(AU.droneGain.gain, cfg.d); set(AU.alarmGain.gain, cfg.a);
+  set(AU.airGain.gain, cfg.n*.4);
 }
+/* keep the context alive across iOS interruptions and backgrounding */
+['pointerup','touchend','click','keydown'].forEach(ev=>addEventListener(ev, ()=>{
+  if(AU.ctx && AU.ctx.state!=='running') AU.ctx.resume().catch(()=>{});
+}, {passive:true}));
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden && AU.ctx && AU.ctx.state!=='running') AU.ctx.resume().catch(()=>{});
+});
 const SCALE = [293.66, 349.23, 392.00, 440.00, 523.25, 587.33];
 function auChime(now){
   if(!AU.ctx || AU.profile!=='wonder') return;
@@ -1259,7 +1281,7 @@ function startGame(){
 }
 
 /* debug/test hook */
-window.__moutere = { goto:enterScene, game, SCENES, HACK };
+window.__moutere = { goto:enterScene, game, SCENES, HACK, AU };
 
 /* ---------- main loop ---------- */
 let NOW = 0, t0 = performance.now();
