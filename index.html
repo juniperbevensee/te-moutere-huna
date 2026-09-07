@@ -177,7 +177,7 @@
     <div id="hk-hint">Juni's splice is in. Tap a junction to rotate it. Route power to the lock.</div>
   </div>
 
-  <div id="dragui">The taonga is warm in Pirihira's hands. <b>Drag it home, into Waitī's light.</b></div>
+  <div id="dragui">The taonga is warm in Pirihira's hands. <b>Click it to pick it up, then carry it home, into Waitī's light.</b></div>
 
   <div id="starui">
     <div id="star-inst">Hold the course. Tap (or press space) when <b>Te Punga</b> drifts into the mark above the mast.</div>
@@ -1239,8 +1239,9 @@ $('stage').addEventListener('pointerdown', e=>{
   else if(game.mode === 'stars') starTap();
   else if(game.mode === 'reunite'){
     const tk = game.taonga;
+    if(tk.drag){ tk.drag = false; reuniteCheck(true); return; }   /* carrying: a click sets it down */
     const grab = e.pointerType==='touch' ? 95 : 75;
-    if(Math.hypot(e.clientX-tk.x, e.clientY-tk.y) < grab) tk.drag = true;
+    if(Math.hypot(e.clientX-tk.x, e.clientY-tk.y) < grab){ tk.drag = true; tk.downAt = performance.now(); }
   }
 });
 addEventListener('pointermove', e=>{
@@ -1251,6 +1252,10 @@ addEventListener('pointermove', e=>{
 });
 addEventListener('pointerup', ()=>{
   if(game.mode==='reunite' && game.taonga.drag){
+    /* A quick tap picks it up and it stays in hand: on the xbox50 a held
+       button is also the way out of a game, so nobody should have to hold
+       one to carry the taonga. A real press-and-drag still releases. */
+    if(performance.now() - (game.taonga.downAt||0) < 350) return;
     game.taonga.drag = false;
     reuniteCheck(true);
   }
