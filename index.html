@@ -177,7 +177,7 @@
     <div id="hk-hint">Juni's splice is in. Tap a junction to rotate it. Route power to the lock.</div>
   </div>
 
-  <div id="dragui">The taonga is warm in Pirihira's hands. <b>Click it to pick it up, then carry it home, into Waitī's light.</b></div>
+  <div id="dragui">The taonga is warm in Pirihira's hands. <b>Tap it to pick it up, then tap it home, into Waitī's light.</b></div>
 
   <div id="starui">
     <div id="star-inst">Hold the course. Tap (or press space) when <b>Te Punga</b> drifts into the mark above the mast.</div>
@@ -1239,7 +1239,17 @@ $('stage').addEventListener('pointerdown', e=>{
   else if(game.mode === 'stars') starTap();
   else if(game.mode === 'reunite'){
     const tk = game.taonga;
-    if(tk.drag){ tk.drag = false; reuniteCheck(true); return; }   /* carrying: a click sets it down */
+    if(tk.drag){
+      /* Carrying: a tap moves the taonga to the finger and KEEPS carrying.
+         On a touchscreen no pointermove arrives between taps, so walking it
+         home tap by tap is the whole mechanic there; tapping into Waitī's
+         light completes. A press that becomes a drag still drags, and a long
+         press (>350ms) releases on pointerup as before. */
+      tk.x = e.clientX; tk.y = e.clientY;
+      tk.downAt = performance.now();
+      reuniteCheck(false);
+      return;
+    }
     const grab = e.pointerType==='touch' ? 95 : 75;
     if(Math.hypot(e.clientX-tk.x, e.clientY-tk.y) < grab){ tk.drag = true; tk.downAt = performance.now(); }
   }
