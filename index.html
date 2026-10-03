@@ -717,6 +717,10 @@ const R = {
 /* ================================================================
    AUDIO — procedural sea, drone, chimes
    ================================================================ */
+/* The xbox50 plays through a TV: its speakers drop the 55Hz drone and most of
+   the low sea, so the console mix lifts the sea and adds audible overtones. */
+const ON_TV = location.pathname.startsWith('/cart/');
+const TV = ON_TV ? {sea:1.8, air:1.4} : {sea:1, air:.4};
 const AU = { ctx:null, master:null, noiseGain:null, filter:null, droneGain:null,
              muted:false, profile:'calm', nextChime:0, alarmOsc:null, alarmGain:null, airGain:null };
 function auInit(){
@@ -741,11 +745,11 @@ function auInit(){
     for(let i=0;i<d.length;i++){ const w = Math.random()*2-1; last = (last + .02*w)/1.02; d[i] = last*3.2; }
     const src = A.createBufferSource(); src.buffer = buf; src.loop = true;
     AU.filter = A.createBiquadFilter(); AU.filter.type='lowpass'; AU.filter.frequency.value=420;
-    AU.noiseGain = A.createGain(); AU.noiseGain.gain.value = .12;
+    AU.noiseGain = A.createGain(); AU.noiseGain.gain.value = .12*TV.sea;
     src.connect(AU.filter); AU.filter.connect(AU.noiseGain); AU.noiseGain.connect(AU.master);
     /* high 'spray' band so the sea reads on phone speakers, which lose everything below ~500Hz */
     const air = A.createBiquadFilter(); air.type='bandpass'; air.frequency.value=1500; air.Q.value=.6;
-    AU.airGain = A.createGain(); AU.airGain.gain.value = .045;
+    AU.airGain = A.createGain(); AU.airGain.gain.value = ON_TV ? .12*TV.air : .045;
     src.connect(air); air.connect(AU.airGain); AU.airGain.connect(AU.master);
     src.start();
     const o1 = A.createOscillator(), o2 = A.createOscillator();
@@ -753,6 +757,13 @@ function auInit(){
     AU.droneGain = A.createGain(); AU.droneGain.gain.value = .035;
     o1.connect(AU.droneGain); o2.connect(AU.droneGain); AU.droneGain.connect(AU.master);
     o1.start(); o2.start();
+    if(ON_TV){
+      [[165,.9],[166.8,.9],[220,.5],[222.4,.5]].forEach(([f,v])=>{
+        const o = A.createOscillator(), g = A.createGain();
+        o.frequency.value = f; g.gain.value = v;
+        o.connect(g); g.connect(AU.droneGain); o.start();
+      });
+    }
     AU.alarmGain = A.createGain(); AU.alarmGain.gain.value = 0; AU.alarmGain.connect(AU.master);
     AU.alarmOsc = A.createOscillator(); AU.alarmOsc.type='triangle'; AU.alarmOsc.frequency.value=196;
     AU.alarmOsc.connect(AU.alarmGain); AU.alarmOsc.start();
@@ -772,9 +783,9 @@ function auScene(p){
     alarm:  {n:.06, f:300,  d:.04,  a:.05},
     wonder: {n:.07, f:380,  d:.045, a:0},
   }[p] || {n:.1, f:400, d:.035, a:0};
-  set(AU.noiseGain.gain, cfg.n); set(AU.filter.frequency, cfg.f);
+  set(AU.noiseGain.gain, cfg.n*TV.sea); set(AU.filter.frequency, cfg.f);
   set(AU.droneGain.gain, cfg.d); set(AU.alarmGain.gain, cfg.a);
-  set(AU.airGain.gain, cfg.n*.4);
+  set(AU.airGain.gain, cfg.n*TV.air);
 }
 /* keep the context alive across iOS interruptions and backgrounding */
 ['pointerup','touchend','click','keydown'].forEach(ev=>addEventListener(ev, ()=>{
