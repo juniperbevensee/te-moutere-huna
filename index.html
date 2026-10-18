@@ -712,6 +712,49 @@ const R = {
     drawSea(t,.64,5,['#0c1d33','#091829','#061222','#040c1a','#020712'],6,'rgba(63,208,168,.4)');
     drawWakaUnua(W*.44, H*.7, Math.min(W,900)/900*.95, t);
   },
+  cloudSea(t){
+    /* no stars on purpose: the sky has closed, the whales do the guiding */
+    ctx.fillStyle = skyGrad('#07090d','#0d1117','#141a22',.6); ctx.fillRect(0,0,W,H);
+    for(let i=0;i<6;i++){
+      const y = H*(.1+i*.085), x = ((t*(5+i*2)+i*W*.37)%(W*1.8))-W*.4, rx = W*(.35+(i%3)*.08);
+      ctx.save(); ctx.translate(x,y); ctx.scale(1,.14);
+      const g = ctx.createRadialGradient(0,0,0,0,0,rx);
+      g.addColorStop(0,'rgba(78,90,106,.26)'); g.addColorStop(1,'rgba(78,90,106,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0,0,rx,0,6.29); ctx.fill(); ctx.restore();
+    }
+    drawSea(t*.6,.62,5,['#151c25','#111820','#0d131a','#090e14','#05080c'],6,null);
+    /* three tohorā surfacing in turn, the old one biggest; each breathes at the top of its rise */
+    /* portrait screens: the dialogue box covers the lower sea, so they surface higher and smaller */
+    const tall = H > W, sc = tall ? .6 : Math.max(.7, Math.min(W,900)/900);
+    (tall ? [[.14,.69,.8,0],[.9,.7,.8,2.1],[.76,.63,1,4.2]]
+          : [[.16,.8,1,0],[.88,.82,1,2.1],[.7,.73,1.5,4.2]]).forEach(([fx,fy,sz,ph])=>{
+      const k = Math.max(0, Math.sin(t*.35+ph));
+      if(k<.04) return;
+      const x=W*fx, y=H*fy, r=58*sz*sc, top=y-r*.6*k;
+      ctx.beginPath(); ctx.moveTo(x-1.9*r,y);
+      ctx.quadraticCurveTo(x-.6*r, top-r*.12*k, x+.4*r, top);
+      ctx.quadraticCurveTo(x+1.3*r, top+r*.05, x+1.7*r, y); ctx.closePath();
+      ctx.fillStyle = `rgba(8,12,18,${.95*Math.min(1,k*2)})`; ctx.fill();
+      /* dorsal fin, low on the back */
+      ctx.beginPath(); ctx.moveTo(x-.95*r, y-r*.36*k); ctx.lineTo(x-.7*r, y-r*.72*k); ctx.lineTo(x-.42*r, y-r*.44*k); ctx.fill();
+      /* wet rim along the back */
+      ctx.beginPath(); ctx.moveTo(x-1.5*r, y-r*.12*k);
+      ctx.quadraticCurveTo(x-.6*r, top-r*.12*k, x+.4*r, top);
+      ctx.strokeStyle = `rgba(143,168,189,${.4*k})`; ctx.lineWidth = 1.5; ctx.stroke();
+      /* water ring where the back breaks the surface */
+      ctx.strokeStyle = `rgba(143,168,189,${.18*k})`;
+      ctx.beginPath(); ctx.ellipse(x-.1*r, y, r*2.1, r*.12, 0, 0, 6.29); ctx.stroke();
+      /* the breath: a soft plume above the blowhole near the crest */
+      if(k>.8){
+        const b = (k-.8)/.2;
+        for(let n=0;n<6;n++){
+          ctx.fillStyle = `rgba(190,205,218,${.09*b})`;
+          ctx.beginPath(); ctx.arc(x+.3*r+Math.sin(n*1.7)*r*.12, top-r*(.2+n*.18)*b, r*(.1+n*.05), 0, 6.29); ctx.fill();
+        }
+      }
+    });
+    drawWakaUnua(W*.44, H*.72, Math.min(W,900)/900*.9, t);
+  },
 };
 
 /* ================================================================
@@ -994,7 +1037,20 @@ const SCENES = {
     ['juni',"Home. I'm steering the first watch. Pirihira I'll grab the charts?"],
     ['dylan',"(smiling, eyes closed, one hand flat on the hull) No charts."],
     ['dylan',"I'll steer."],
-    ['nar',"And he does, no charts nor stars needed now. The whole ocean sings him true all the way... home."],
+  ], next:'tohora' },
+
+  tohora: { bg:'cloudSea', audio:'wonder', lines:[
+    ['nar',"By the second night the cloud comes down. Low, thick, total. Not one star. Not even the nine."],
+    ['maia',"Pirihira... I can't see anything. No stars, no swell lines. I can't even see the bow."],
+    ['juni',"(quietly) Okay. Now would be a really good time for those charts."],
+    ['dylan',"(eyes closed) We don't need to see. We need to ask."],
+    ['nar',"He kneels at the edge of the hull and lays his palm flat on the black water. And he speaks. Not loud. The way you'd speak to an elder."],
+    ['dylan',"E ngā tohorā, tēnā koutou. We're a long way from home, and the sky has closed its eyes. Will you take us home?"],
+    ['nar',"For a long moment, nothing. Then, off the bow, a breath. A long, low exhalation in the dark. Then another. Then a third, older and slower than the rest."],
+    ['maia',"(whispering) ...Are those—"],
+    ['dylan',"The three from the bay. The old one came too."],
+    ['nar',"Three tohorā rise beside the waka unua, dark backs gleaming in no light at all. They turn toward home, and wait for her."],
+    ['nar',"And the old one leads, and the waka follows, all night through the cloud-dark, the whole ocean singing them true, all the way... home."],
   ], end:'endB' },
 };
 
