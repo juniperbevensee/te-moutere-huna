@@ -712,6 +712,27 @@ const R = {
     drawSea(t,.64,5,['#0c1d33','#091829','#061222','#040c1a','#020712'],6,'rgba(63,208,168,.4)');
     drawWakaUnua(W*.44, H*.7, Math.min(W,900)/900*.95, t);
   },
+  cloudSea(t){
+    /* no stars on purpose: the sky has closed, the whales do the guiding */
+    ctx.fillStyle = skyGrad('#07090d','#0d1117','#141a22',.6); ctx.fillRect(0,0,W,H);
+    for(let i=0;i<5;i++){
+      const y = H*(.12+i*.1), x = ((t*(6+i*2)+i*W*.37)%(W*1.6))-W*.3;
+      ctx.fillStyle = 'rgba(70,82,98,.18)';
+      ctx.beginPath(); ctx.ellipse(x, y, W*.45, H*.05, 0, 0, 6.29); ctx.fill();
+    }
+    drawSea(t*.6,.62,5,['#151c25','#111820','#0d131a','#090e14','#05080c'],6,null);
+    /* three tohorā surfacing in turn, the old one last and biggest */
+    [[.24,.74,1,0],[.7,.78,1.1,2.1],[.56,.68,1.45,4.3]].forEach(([fx,fy,sz,ph])=>{
+      const k = Math.max(0, Math.sin(t*.35+ph));
+      if(k<.05) return;
+      const x=W*fx, y=H*fy, r=40*sz*Math.min(W,900)/900;
+      ctx.fillStyle = `rgba(28,38,50,${.95*k})`;
+      ctx.beginPath(); ctx.ellipse(x, y+r*.3*(1-k), r*1.9, r*.42*k, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = `rgba(143,168,189,${.3*k})`;
+      ctx.beginPath(); ctx.ellipse(x-r*.4, y-r*.3*k, r*.9, r*.08, 0, Math.PI, 0); ctx.fill();
+    });
+    drawWakaUnua(W*.44, H*.72, Math.min(W,900)/900*.9, t);
+  },
 };
 
 /* ================================================================
@@ -994,7 +1015,20 @@ const SCENES = {
     ['juni',"Home. I'm steering the first watch. Pirihira I'll grab the charts?"],
     ['dylan',"(smiling, eyes closed, one hand flat on the hull) No charts."],
     ['dylan',"I'll steer."],
-    ['nar',"And he does, no charts nor stars needed now. The whole ocean sings him true all the way... home."],
+  ], next:'tohora' },
+
+  tohora: { bg:'cloudSea', audio:'wonder', lines:[
+    ['nar',"By the second night the cloud comes down. Low, thick, total. Not one star. Not even the nine."],
+    ['maia',"Pirihira... I can't see anything. No stars, no swell lines. I can't even see the bow."],
+    ['juni',"(quietly) Okay. Now would be a really good time for those charts."],
+    ['dylan',"(eyes closed) We don't need to see. We need to ask."],
+    ['nar',"He kneels at the edge of the hull and lays his palm flat on the black water. And he speaks. Not loud. The way you'd speak to an elder."],
+    ['dylan',"E ngā tohorā, tēnā koutou. We're a long way from home, and the sky has closed its eyes. Will you take us home?"],
+    ['nar',"For a long moment, nothing. Then, off the bow, a breath. A long, low exhalation in the dark. Then another. Then a third, older and slower than the rest."],
+    ['maia',"(whispering) ...Are those—"],
+    ['dylan',"The three from the bay. The old one came too."],
+    ['nar',"Three tohorā rise beside the waka unua, dark backs gleaming in no light at all. They turn toward home, and wait for her."],
+    ['nar',"And the old one leads, and the waka follows, all night through the cloud-dark, the whole ocean singing them true, all the way... home."],
   ], end:'endB' },
 };
 
